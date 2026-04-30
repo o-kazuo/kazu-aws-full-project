@@ -110,3 +110,44 @@ resource "aws_route_table_association" "public_1c" {
   route_table_id = aws_route_table.public.id
 }
 
+/* 
+# =====================================================
+# 【将来用：NATゲートウェイ爆弾】
+# 使う時はこのコメントアウト（/* と */）を外して apply！
+# =====================================================
+
+# 1. NATゲートウェイ用の固定IP（EIP）
+resource "aws_eip" "nat" {
+  domain = "vpc"
+  tags   = { Name = "kazu-nat-eip" }
+}
+
+# 2. NATゲートウェイ本体（パブリックサブネットに配置）
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_1a.id # 1a側の玄関に設置
+  tags          = { Name = "kazu-nat-gw" }
+
+  # インターネットゲートウェイが先にできていることを確実にする
+  depends_on = [aws_internet_gateway.main]
+}
+
+# 3. プライベートサブネット用のルートテーブル（NAT経由で外へ）
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+
+  tags = { Name = "kazu-private-rt" }
+}
+
+# 4. App層/DB層のサブネットをこのルートテーブルに紐付け
+resource "aws_route_table_association" "app_1a" {
+  subnet_id      = aws_subnet.app_1a.id
+  route_table_id = aws_route_table.private.id
+}
+# ...（1cやDB層も同様に紐付けるコードをここに並べる）
+*/
