@@ -9,12 +9,13 @@ resource "aws_instance" "web" {
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 
   user_data = <<-EOF
-              #!/bin/bash
-              dnf install -y httpd
-              systemctl start httpd
-              systemctl enable httpd
-              echo "<h1>Kazu's Server is Born!</h1>" > /var/www/html/index.html
-              EOF
+#!/bin/bash
+dnf update -y
+dnf install -y httpd php php-mysqlnd
+systemctl start httpd
+systemctl enable httpd
+echo "<?php echo '<h1>Kazu PHP Server is Born!</h1>'; phpinfo(); ?>" > /var/www/html/index.php
+EOF
 
   tags = {
     Name = "kazu-EC2-web-server-1"
