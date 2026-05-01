@@ -1,7 +1,12 @@
 <?php
-$host = 'terraform-20260501055922493000000003.cr40amieu2yc.ap-northeast-1.rds.amazonaws.com';
+// Secrets Managerからパスワードを取得
+$secret_json = shell_exec('aws secretsmanager get-secret-value --secret-id kazu-db-secret --region ap-northeast-1 --query SecretString --output text');
+$secret = json_decode($secret_json, true);
+
+// 環境変数からRDSエンドポイントを取得
+$host = getenv('DB_HOST');
 $user = 'admin';
-$pass = 'kazu-6187';
+$pass = $secret['password'];
 $db   = 'kazu_DB';
 
 $conn = new mysqli($host, $user, $pass, $db);

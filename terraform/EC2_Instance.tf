@@ -3,10 +3,13 @@ resource "aws_instance" "web" {
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_1a.id
   
-  # ↓これを追加しました！これでネット上の住所（IP）が確定します
   associate_public_ip_address = true
 
   vpc_security_group_ids = [aws_security_group.web_sg.id]
+
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+
+  depends_on = [aws_iam_instance_profile.ec2_profile]
 
   user_data = <<-EOF
 #!/bin/bash
@@ -14,7 +17,14 @@ dnf update -y
 dnf install -y httpd php php-mysqlnd
 systemctl start httpd
 systemctl enable httpd
-echo "<?php echo '<h1>Kazu PHP Server is Born!</h1>'; phpinfo(); ?>" > /var/www/html/index.php
+
+# GitHubからmemo.phpをダウンロード
+curl -o /var/www/html/memo.php https://raw.githubusercontent.com/o-kazuo/kazu-aws-full-project/main/app/memo.php
+
+# RDSエンドポイントを環境変数として設定
+echo "DB_HOST=${aws_db_instance.mysql.address}" >> /etc/environment
+
+echo "<?php echo '<h1>Kazu PHP Server is Born!</h1>'; ?>" > /var/www/html/index.php
 EOF
 
   tags = {
@@ -22,7 +32,7 @@ EOF
   }
 }
 
-# セキュリティグループとOutputの設定（下にあるはずのもの）
+# セキュリティグループ
 resource "aws_security_group" "web_sg" {
   name        = "kazu-web-sg"
   description = "Allow HTTP inbound traffic"
