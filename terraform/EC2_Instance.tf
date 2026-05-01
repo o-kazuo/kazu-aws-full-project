@@ -21,8 +21,11 @@ systemctl enable httpd
 # GitHubからmemo.phpをダウンロード
 curl -o /var/www/html/memo.php https://raw.githubusercontent.com/o-kazuo/kazu-aws-full-project/main/app/memo.php
 
-# RDSエンドポイントを環境変数として設定
-echo "DB_HOST=${aws_db_instance.mysql.address}" >> /etc/environment
+# RDSエンドポイントをApacheの環境変数として設定
+echo "SetEnv DB_HOST ${aws_db_instance.mysql.address}" >> /etc/httpd/conf/httpd.conf
+
+# Apacheを再起動して設定を反映
+systemctl restart httpd
 
 echo "<?php echo '<h1>Kazu PHP Server is Born!</h1>'; ?>" > /var/www/html/index.php
 EOF
