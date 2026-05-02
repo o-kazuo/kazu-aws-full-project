@@ -84,3 +84,58 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
     Name = "${var.env}-alb-5xx-alarm"
   }
 }
+
+# GuardDuty
+resource "aws_guardduty_detector" "main" {
+  enable = true
+
+  tags = {
+    Name = "${var.env}-guardduty"
+  }
+}
+
+# CloudWatch Logs グループ（アプリログ用）
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/app/${var.env}"
+  retention_in_days = 30
+
+  tags = {
+    Name = "${var.env}-app-logs"
+  }
+}
+
+# CloudWatch アラーム（Aurora DB接続数）
+resource "aws_cloudwatch_metric_alarm" "db_connections" {
+  alarm_name          = "${var.env}-db-connections"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "DatabaseConnections"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "DB接続数が80を超えました"
+  alarm_actions       = [var.sns_topic_arn]
+
+  tags = {
+    Name = "${var.env}-db-connections-alarm"
+  }
+}
+
+# CloudWatch アラーム（Lambda エラー）
+resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  alarm_name          = "${var.env}-lambda-errors"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 5
+  alarm_description   = "Lambdaエラーが5件を超えました"
+  alarm_actions       = [var.sns_topic_arn]
+
+  tags = {
+    Name = "${var.env}-lambda-errors-alarm"
+  }
+}
