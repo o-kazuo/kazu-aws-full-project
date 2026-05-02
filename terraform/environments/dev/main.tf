@@ -79,3 +79,12 @@ module "monitoring" {
   notification_email = var.notification_email
   sns_topic_arn      = module.serverless.sns_topic_arn
 }
+# バックアップ層
+module "backup" {
+  source      = "../../modules/backup"
+  env         = var.env
+  kms_key_arn = module.security.kms_key_arn
+  backup_resources = [
+    module.database.cluster_endpoint
+  ]
+}
