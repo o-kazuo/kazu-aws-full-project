@@ -16,7 +16,8 @@ resource "aws_kms_alias" "main" {
 
 # Secrets Manager（DBパスワード）
 resource "aws_secretsmanager_secret" "db" {
-  name       = "${var.env}-db-secret"
+  name       = "${var.env}-db-secret-v2"
+  recovery_window_in_days = 0
   kms_key_id = aws_kms_key.main.arn
 
   tags = {

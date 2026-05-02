@@ -104,3 +104,14 @@ module "cdn" {
   env          = var.env
   alb_dns_name = module.compute.alb_dns_name
 }
+
+module "container" {
+  source             = "../../modules/container"
+  env                = var.env
+  aws_region         = var.aws_region
+  vpc_id             = module.networking.vpc_id
+  app_subnets        = module.networking.app_subnet_ids
+  alb_sg_id          = module.compute.alb_sg_id
+  target_group_arn   = module.compute.ecs_target_group_arn
+  ecr_repository_url = "nginx"
+}

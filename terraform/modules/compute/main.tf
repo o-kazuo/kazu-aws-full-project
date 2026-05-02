@@ -70,10 +70,10 @@ resource "aws_lb" "web" {
 
 # ターゲットグループ
 resource "aws_lb_target_group" "web" {
-  name     = "${var.env}-web-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  name        = "${var.env}-web-tg-ip"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
 
   health_check {
     path                = "/"
@@ -83,7 +83,27 @@ resource "aws_lb_target_group" "web" {
   }
 
   tags = {
-    Name = "${var.env}-web-tg"
+    Name = "${var.env}-web-tg-ip"
+  }
+}
+
+# ECS Fargate用ターゲットグループ（ip タイプ）
+resource "aws_lb_target_group" "ecs" {
+  name        = "${var.env}-ecs-tg"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
+
+  health_check {
+    path                = "/"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    interval            = 30
+  }
+
+  tags = {
+    Name = "${var.env}-ecs-tg"
   }
 }
 
@@ -95,7 +115,7 @@ resource "aws_lb_listener" "web" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.web.arn
+    target_group_arn = aws_lb_target_group.ecs.arn
   }
 }
 
@@ -142,7 +162,6 @@ EOF
 resource "aws_autoscaling_group" "web" {
   name                = "${var.env}-web-asg"
   vpc_zone_identifier = var.public_subnets
-  target_group_arns   = [aws_lb_target_group.web.arn]
   min_size            = 1
   max_size            = 3
   desired_capacity    = 1
