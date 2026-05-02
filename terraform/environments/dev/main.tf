@@ -57,7 +57,7 @@ module "compute" {
   env            = var.env
   vpc_id         = module.networking.vpc_id
   public_subnets = module.networking.public_subnet_ids
-  ec2_role_name  = var.ec2_role_name
+  ec2_role_name  = module.security.ec2_role_name
   db_host        = module.database.cluster_endpoint
 }
 
@@ -85,6 +85,6 @@ module "backup" {
   env         = var.env
   kms_key_arn = module.security.kms_key_arn
   backup_resources = [
-    module.database.cluster_endpoint
+    module.database.cluster_arn
   ]
 }

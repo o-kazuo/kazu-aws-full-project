@@ -52,12 +52,6 @@ variable "db_password" {
   sensitive   = true
 }
 
-variable "ec2_role_name" {
-  description = "EC2 IAMロール名"
-  type        = string
-  default     = "dev-ec2-role"
-}
-
 variable "account_id" {
   description = "AWSアカウントID"
   type        = string

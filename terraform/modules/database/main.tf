@@ -37,7 +37,7 @@ resource "aws_security_group" "db" {
 resource "aws_rds_cluster" "main" {
   cluster_identifier      = "${var.env}-aurora-cluster"
   engine                  = "aurora-mysql"
-  engine_version          = "8.0.mysql_aurora.3.05.2"
+  engine_version          = "8.0.mysql_aurora.3.08.0"
   database_name           = var.db_name
   master_username         = var.db_username
   master_password         = var.db_password

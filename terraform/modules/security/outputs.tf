@@ -12,3 +12,8 @@ output "db_secret_arn" {
   description = "Secrets ManagerのARN"
   value       = aws_secretsmanager_secret.db.arn
 }
+
+output "ec2_role_name" {
+  description = "EC2 IAMロール名"
+  value       = aws_iam_role.ec2.name
+}
