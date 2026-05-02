@@ -115,3 +115,10 @@ module "container" {
   target_group_arn   = module.compute.ecs_target_group_arn
   ecr_repository_url = "nginx"
 }
+
+# 認証層
+module "auth" {
+  source     = "../../modules/auth"
+  env        = var.env
+  aws_region = var.aws_region
+}
