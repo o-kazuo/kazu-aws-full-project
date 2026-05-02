@@ -24,7 +24,7 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# ネットワーク層
+# ネットワーク層 ← cache_subnets追加
 module "networking" {
   source         = "../../modules/networking"
   env            = var.env
@@ -33,6 +33,7 @@ module "networking" {
   public_subnets = var.public_subnets
   app_subnets    = var.app_subnets
   db_subnets     = var.db_subnets
+  cache_subnets  = var.cache_subnets  # ← 追加
 }
 
 # セキュリティ層
@@ -43,17 +44,18 @@ module "security" {
   db_password = var.db_password
 }
 
-# データベース層
+# データベース層 ← db_secret_arn追加
 module "database" {
-  source      = "../../modules/database"
-  env         = var.env
-  vpc_id      = module.networking.vpc_id
-  db_subnets  = module.networking.db_subnet_ids
-  app_sg_ids  = [module.compute.web_sg_id]
-  kms_key_arn = module.security.kms_key_arn
-  db_name     = var.db_name
-  db_username = var.db_username
-  db_password = var.db_password
+  source        = "../../modules/database"
+  env           = var.env
+  vpc_id        = module.networking.vpc_id
+  db_subnets    = module.networking.db_subnet_ids
+  app_sg_ids    = [module.compute.web_sg_id]
+  kms_key_arn   = module.security.kms_key_arn
+  db_name       = var.db_name
+  db_username   = var.db_username
+  db_password   = var.db_password
+  db_secret_arn = module.security.db_secret_arn  # ← 追加
 }
 
 # コンピュート層
@@ -84,6 +86,7 @@ module "monitoring" {
   notification_email = var.notification_email
   sns_topic_arn      = module.serverless.sns_topic_arn
 }
+
 # バックアップ層
 module "backup" {
   source      = "../../modules/backup"
@@ -96,7 +99,7 @@ module "backup" {
 
 # CDN層
 module "cdn" {
-  source   = "../../modules/cdn"
+  source = "../../modules/cdn"
   providers = {
     aws           = aws
     aws.us_east_1 = aws.us_east_1
@@ -105,6 +108,7 @@ module "cdn" {
   alb_dns_name = module.compute.alb_dns_name
 }
 
+# コンテナ層
 module "container" {
   source             = "../../modules/container"
   env                = var.env
@@ -134,4 +138,15 @@ module "governance" {
   source            = "../../modules/governance"
   env               = var.env
   cloudtrail_bucket = module.serverless.input_bucket_name
+}
+
+# ===== ここから追加 =====
+
+# キャッシュ層
+module "cache" {
+  source        = "../../modules/cache"
+  env           = var.env
+  vpc_id        = module.networking.vpc_id
+  cache_subnets = module.networking.cache_subnet_ids
+  app_sg_ids    = [module.compute.web_sg_id]
 }

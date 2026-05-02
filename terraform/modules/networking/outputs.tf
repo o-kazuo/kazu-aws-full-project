@@ -17,3 +17,12 @@ output "db_subnet_ids" {
   description = "DB用プライベートサブネットIDリスト"
   value       = [aws_subnet.db_1a.id, aws_subnet.db_1c.id]
 }
+
+# （既存outputはそのまま）
+
+# ===== ここから追加 =====
+
+output "cache_subnet_ids" {
+  description = "Cache用プライベートサブネットIDリスト"
+  value       = [aws_subnet.cache_1a.id, aws_subnet.cache_1c.id]
+}

@@ -34,6 +34,12 @@ variable "db_subnets" {
   default     = ["10.0.21.0/24", "10.0.22.0/24"]
 }
 
+variable "cache_subnets" {
+  description = "Cache用プライベートサブネットCIDRリスト"
+  type        = list(string)
+  default     = ["10.0.31.0/24", "10.0.32.0/24"]
+}
+
 variable "db_name" {
   description = "データベース名"
   type        = string

@@ -35,18 +35,18 @@ resource "aws_security_group" "db" {
 
 # Aurora Serverless v2 クラスター
 resource "aws_rds_cluster" "main" {
-  cluster_identifier      = "${var.env}-aurora-cluster"
-  engine                  = "aurora-mysql"
-  engine_version          = "8.0.mysql_aurora.3.08.0"
-  database_name           = var.db_name
-  master_username         = var.db_username
-  master_password         = var.db_password
-  db_subnet_group_name    = aws_db_subnet_group.main.name
-  vpc_security_group_ids  = [aws_security_group.db.id]
-  kms_key_id              = var.kms_key_arn
-  storage_encrypted       = true
-  skip_final_snapshot     = true
-  deletion_protection     = false
+  cluster_identifier     = "${var.env}-aurora-cluster"
+  engine                 = "aurora-mysql"
+  engine_version         = "8.0.mysql_aurora.3.08.0"
+  database_name          = var.db_name
+  master_username        = var.db_username
+  master_password        = var.db_password
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  vpc_security_group_ids = [aws_security_group.db.id]
+  kms_key_id             = var.kms_key_arn
+  storage_encrypted      = true
+  skip_final_snapshot    = true
+  deletion_protection    = false
 
   serverlessv2_scaling_configuration {
     min_capacity = 0.5
@@ -68,5 +68,232 @@ resource "aws_rds_cluster_instance" "main" {
 
   tags = {
     Name = "${var.env}-aurora-instance-1"
+  }
+}
+
+# RDS Proxy用セキュリティグループ
+resource "aws_security_group" "rds_proxy" {
+  name        = "${var.env}-rds-proxy-sg"
+  description = "RDS Proxy security group"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = var.app_sg_ids
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.env}-rds-proxy-sg"
+  }
+}
+
+# RDS Proxy
+resource "aws_db_proxy" "main" {
+  name                   = "${var.env}-rds-proxy"
+  debug_logging          = false
+  engine_family          = "MYSQL"
+  idle_client_timeout    = 1800
+  require_tls            = true
+  role_arn               = aws_iam_role.rds_proxy.arn
+  vpc_security_group_ids = [aws_security_group.rds_proxy.id]
+  vpc_subnet_ids         = var.db_subnets
+
+  auth {
+    auth_scheme = "SECRETS"
+    iam_auth    = "DISABLED"
+    secret_arn  = var.db_secret_arn
+  }
+
+  tags = {
+    Name = "${var.env}-rds-proxy"
+  }
+}
+
+# RDS ProxyをAuroraクラスターに紐付け
+resource "aws_db_proxy_default_target_group" "main" {
+  db_proxy_name = aws_db_proxy.main.name
+
+  connection_pool_config {
+    connection_borrow_timeout    = 120
+    max_connections_percent      = 100
+    max_idle_connections_percent = 50
+  }
+}
+
+resource "aws_db_proxy_target" "main" {
+  db_cluster_identifier = aws_rds_cluster.main.id
+  db_proxy_name         = aws_db_proxy.main.name
+  target_group_name     = aws_db_proxy_default_target_group.main.name
+}
+
+# RDS Proxy用IAMロール
+resource "aws_iam_role" "rds_proxy" {
+  name = "${var.env}-rds-proxy-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "rds.amazonaws.com"
+      }
+    }]
+  })
+
+  tags = {
+    Name = "${var.env}-rds-proxy-role"
+  }
+}
+
+# RDS ProxyがSecrets Managerを読めるポリシー
+resource "aws_iam_role_policy" "rds_proxy_secrets" {
+  name = "${var.env}-rds-proxy-secrets-policy"
+  role = aws_iam_role.rds_proxy.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+      ]
+      Resource = [var.db_secret_arn]
+    }]
+  })
+}
+
+# ===== DynamoDB テーブル =====
+
+# 月次AI使用回数管理
+resource "aws_dynamodb_table" "user_usage" {
+  name         = "${var.env}-user-usage"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "year_month"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "year_month"
+    type = "S"
+  }
+
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = var.kms_key_arn
+  }
+
+  ttl {
+    attribute_name = "expires_at"
+    enabled        = true
+  }
+
+  tags = {
+    Name = "${var.env}-user-usage"
+  }
+}
+
+# AI処理履歴（リアルタイム）
+resource "aws_dynamodb_table" "processing_history" {
+  name         = "${var.env}-processing-history"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "created_at"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "created_at"
+    type = "S"
+  }
+
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = var.kms_key_arn
+  }
+
+  ttl {
+    attribute_name = "expires_at"
+    enabled        = true
+  }
+
+  tags = {
+    Name = "${var.env}-processing-history"
+  }
+}
+
+# Lexチャット履歴
+resource "aws_dynamodb_table" "chat_history" {
+  name         = "${var.env}-chat-history"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+  range_key    = "timestamp"
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "timestamp"
+    type = "S"
+  }
+
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = var.kms_key_arn
+  }
+
+  ttl {
+    attribute_name = "expires_at"
+    enabled        = true
+  }
+
+  tags = {
+    Name = "${var.env}-chat-history"
+  }
+}
+
+# Macie PII検出記録
+resource "aws_dynamodb_table" "macie_findings" {
+  name         = "${var.env}-macie-findings"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "bucket_name"
+  range_key    = "finding_id"
+
+  attribute {
+    name = "bucket_name"
+    type = "S"
+  }
+
+  attribute {
+    name = "finding_id"
+    type = "S"
+  }
+
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = var.kms_key_arn
+  }
+
+  tags = {
+    Name = "${var.env}-macie-findings"
   }
 }

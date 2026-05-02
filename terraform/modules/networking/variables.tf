@@ -27,3 +27,13 @@ variable "db_subnets" {
   description = "DB用プライベートサブネットCIDRリスト"
   type        = list(string)
 }
+
+# （既存変数はそのまま）
+
+# ===== ここから追加 =====
+
+variable "cache_subnets" {
+  description = "Cache用プライベートサブネットCIDRリスト"
+  type        = list(string)
+  default     = ["10.0.31.0/24", "10.0.32.0/24"]
+}

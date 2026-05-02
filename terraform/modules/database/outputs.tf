@@ -17,3 +17,35 @@ output "cluster_arn" {
   description = "AuroraクラスターARN"
   value       = aws_rds_cluster.main.arn
 }
+
+output "rds_proxy_endpoint" {
+  description = "RDS Proxyエンドポイント"
+  value       = aws_db_proxy.main.endpoint
+}
+
+output "rds_proxy_arn" {
+  description = "RDS Proxy ARN"
+  value       = aws_db_proxy.main.arn
+}
+
+# ===== DynamoDB =====
+
+output "user_usage_table_arn" {
+  description = "user_usageテーブルARN"
+  value       = aws_dynamodb_table.user_usage.arn
+}
+
+output "processing_history_table_arn" {
+  description = "processing_historyテーブルARN"
+  value       = aws_dynamodb_table.processing_history.arn
+}
+
+output "chat_history_table_arn" {
+  description = "chat_historyテーブルARN"
+  value       = aws_dynamodb_table.chat_history.arn
+}
+
+output "macie_findings_table_arn" {
+  description = "macie_findingsテーブルARN"
+  value       = aws_dynamodb_table.macie_findings.arn
+}
