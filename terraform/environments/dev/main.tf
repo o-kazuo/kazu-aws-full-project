@@ -128,3 +128,10 @@ module "messaging" {
   source = "../../modules/messaging"
   env    = var.env
 }
+
+# ガバナンス層
+module "governance" {
+  source            = "../../modules/governance"
+  env               = var.env
+  cloudtrail_bucket = module.serverless.input_bucket_name
+}
