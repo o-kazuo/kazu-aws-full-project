@@ -43,3 +43,6 @@ terraform.rc
 # Uncomment the line below if you want to ignore planout files.
 # planoutterraform/secrets.tf
 terraform/secrets.tf
+# tfvars（パスワード等の機密情報）
+*.tfvars
+*.tfvars.json
