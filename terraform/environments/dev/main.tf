@@ -19,6 +19,11 @@ provider "aws" {
   region = var.aws_region
 }
 
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
 # ネットワーク層
 module "networking" {
   source         = "../../modules/networking"
@@ -87,4 +92,15 @@ module "backup" {
   backup_resources = [
     module.database.cluster_arn
   ]
+}
+
+# CDN層
+module "cdn" {
+  source   = "../../modules/cdn"
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+  env          = var.env
+  alb_dns_name = module.compute.alb_dns_name
 }
