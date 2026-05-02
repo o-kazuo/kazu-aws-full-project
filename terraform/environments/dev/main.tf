@@ -122,3 +122,9 @@ module "auth" {
   env        = var.env
   aws_region = var.aws_region
 }
+
+# メッセージング層
+module "messaging" {
+  source = "../../modules/messaging"
+  env    = var.env
+}
