@@ -57,6 +57,10 @@ resource "aws_db_instance" "mysql" {
   # ☆追加：マルチAZ有効化
   multi_az = true
 
+  # ★追加：KMS暗号化
+storage_encrypted = true
+kms_key_id        = aws_kms_key.main.arn
+
   # 先ほど作ったグループを紐付け
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.db_sg.id]

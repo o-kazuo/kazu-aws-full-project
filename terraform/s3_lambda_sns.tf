@@ -9,6 +9,18 @@ resource "aws_s3_bucket" "input" {
   }
 }
 
+# 入力バケットの暗号化
+resource "aws_s3_bucket_server_side_encryption_configuration" "input" {
+  bucket = aws_s3_bucket.input.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.main.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
 # -----------------------------------------------
 # S3バケット（出力）
 # -----------------------------------------------
@@ -22,6 +34,18 @@ resource "aws_s3_bucket" "output" {
 
 # AWSアカウントID取得
 data "aws_caller_identity" "current" {}
+
+# 出力バケットの暗号化
+resource "aws_s3_bucket_server_side_encryption_configuration" "output" {
+  bucket = aws_s3_bucket.output.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.main.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
 
 # -----------------------------------------------
 # SNSトピック
