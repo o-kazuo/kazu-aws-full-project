@@ -16,7 +16,7 @@ resource "aws_launch_template" "web" {
   user_data = base64encode(<<-EOF
 #!/bin/bash
 dnf update -y
-dnf install -y httpd php php-mysqlnd
+dnf install -y httpd php php-mysqlnd mariadb105
 systemctl start httpd
 systemctl enable httpd
 
