@@ -1,3 +1,6 @@
+from utils.database import engine, Base
+import models.user
+import models.ai_result
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, ai, contents, batch, chat
@@ -22,6 +25,11 @@ app.include_router(contents.router, prefix="/contents", tags=["コンテンツ"]
 app.include_router(batch.router, prefix="/batch", tags=["バッチ処理"])
 app.include_router(chat.router, prefix="/chat", tags=["チャット"])
 
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "KazuAI Platform"}
+
