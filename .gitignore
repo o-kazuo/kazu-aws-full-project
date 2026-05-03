@@ -46,3 +46,7 @@ terraform/secrets.tf
 # tfvars（パスワード等の機密情報）
 *.tfvars
 *.tfvars.json
+
+# AWS CLI installer
+awscliv2.zip
+aws/
