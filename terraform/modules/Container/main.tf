@@ -91,6 +91,13 @@ resource "aws_ecs_task_definition" "main" {
       containerPort = 80
       protocol      = "tcp"
     }]
+    environment = [
+      { name = "AWS_REGION",           value = var.aws_region },
+      { name = "LEX_BOT_ID",           value = var.lex_bot_id },
+      { name = "LEX_BOT_ALIAS_ID",     value = var.lex_bot_alias_id },
+      { name = "BATCH_JOB_QUEUE",      value = "dev-batch-queue" },
+      { name = "BATCH_JOB_DEFINITION", value = "dev-batch-job" }
+    ]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -142,3 +149,4 @@ resource "aws_ecs_service" "main" {
     Name = "${var.env}-web-service"
   }
 }
+

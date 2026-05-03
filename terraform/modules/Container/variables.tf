@@ -33,3 +33,13 @@ variable "ecr_repository_url" {
   type        = string
   default     = "nginx"
 }
+
+variable "lex_bot_id" {
+  description = "Lex v2 Bot ID"
+  type        = string
+}
+
+variable "lex_bot_alias_id" {
+  description = "Lex v2 Bot Alias ID"
+  type        = string
+}

@@ -42,6 +42,7 @@ module "security" {
   env         = var.env
   db_username = var.db_username
   db_password = var.db_password
+  vpc_id      = module.networking.vpc_id  # ← 追加
 }
 
 # データベース層 ← db_secret_arn追加
@@ -108,6 +109,12 @@ module "cdn" {
   alb_dns_name = module.compute.alb_dns_name
 }
 
+# Lex
+module "lex" {
+  source = "../../modules/lex"
+  env    = var.env
+}
+
 # コンテナ層
 module "container" {
   source             = "../../modules/container"
@@ -118,6 +125,8 @@ module "container" {
   alb_sg_id          = module.compute.alb_sg_id
   target_group_arn   = module.compute.ecs_target_group_arn
   ecr_repository_url = "nginx"
+  lex_bot_id         = module.lex.bot_id        # ← 追加
+  lex_bot_alias_id   = module.lex.bot_alias_id  # ← 追加
 }
 
 # 認証層
@@ -149,4 +158,13 @@ module "cache" {
   vpc_id        = module.networking.vpc_id
   cache_subnets = module.networking.cache_subnet_ids
   app_sg_ids    = [module.compute.web_sg_id]
+}
+
+module "batch" {
+  source         = "../../modules/batch"
+  env            = var.env
+  aws_region     = var.aws_region
+  app_subnet_ids = module.networking.app_subnet_ids
+  batch_sg_id    = module.security.batch_sg_id
+  ecr_image_uri  = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/dev-web-app:latest"
 }

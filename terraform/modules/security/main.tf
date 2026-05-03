@@ -60,3 +60,19 @@ resource "aws_iam_role_policy_attachment" "ec2_secrets" {
   role       = aws_iam_role.ec2.name
   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
 }
+
+# Batch用セキュリティグループ
+resource "aws_security_group" "batch" {
+  name        = "${var.env}-batch-sg"
+  description = "Security group for AWS Batch"
+  vpc_id      = var.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "${var.env}-batch-sg" }
+}

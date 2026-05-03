@@ -17,3 +17,5 @@ output "ec2_role_name" {
   description = "EC2 IAMロール名"
   value       = aws_iam_role.ec2.name
 }
+
+output "batch_sg_id" { value = aws_security_group.batch.id }
