@@ -134,3 +134,69 @@ resource "aws_subnet" "cache_1c" {
     Name = "${var.env}-cache-1c"
   }
 }
+
+# Elastic IP（NAT Gateway用）
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = "${var.env}-nat-eip"
+  }
+}
+
+# NAT Gateway（パブリックサブネット1aに配置）
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_1a.id
+
+  tags = {
+    Name = "${var.env}-nat-gw"
+  }
+
+  depends_on = [aws_internet_gateway.main]
+}
+
+# プライベートルートテーブル（アプリ・DB・Cache用）
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+
+  tags = {
+    Name = "${var.env}-private-rt"
+  }
+}
+
+# プライベートサブネットにルートテーブルを関連付け
+resource "aws_route_table_association" "app_1a" {
+  subnet_id      = aws_subnet.app_1a.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "app_1c" {
+  subnet_id      = aws_subnet.app_1c.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "db_1a" {
+  subnet_id      = aws_subnet.db_1a.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "db_1c" {
+  subnet_id      = aws_subnet.db_1c.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "cache_1a" {
+  subnet_id      = aws_subnet.cache_1a.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "cache_1c" {
+  subnet_id      = aws_subnet.cache_1c.id
+  route_table_id = aws_route_table.private.id
+}
