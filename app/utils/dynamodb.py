@@ -124,3 +124,7 @@ def get_processing_history(user_id: str, limit: int = 20) -> list:
 
     except ClientError as e:
         raise Exception(f"処理履歴取得失敗: {e.response['Error']['Message']}")
+
+def get_dynamodb_client():
+    """DynamoDBクライアントを返す"""
+    return boto3.client("dynamodb", region_name=REGION)

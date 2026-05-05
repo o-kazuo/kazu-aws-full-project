@@ -128,7 +128,9 @@ resource "aws_iam_instance_profile" "ec2" {
 # 起動テンプレート
 resource "aws_launch_template" "web" {
   name_prefix   = "${var.env}-web-"
+
   image_id      = var.ami_id
+  
   instance_type = var.instance_type
 
   iam_instance_profile {
