@@ -49,3 +49,7 @@ output "macie_findings_table_arn" {
   description = "macie_findingsテーブルARN"
   value       = aws_dynamodb_table.macie_findings.arn
 }
+output "db_secret_arn" {
+  description = "RDS Proxy用SecretARN"
+  value       = aws_secretsmanager_secret.rds_proxy.arn
+}

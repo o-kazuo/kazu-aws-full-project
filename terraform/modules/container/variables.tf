@@ -52,3 +52,8 @@ variable "kms_key_arn" {
   description = "KMS Key ARN"
   type        = string
 }
+
+variable "db_sg_id" {
+  description = "RDS DBセキュリティグループID"
+  type        = string
+}

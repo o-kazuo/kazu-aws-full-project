@@ -19,3 +19,21 @@ variable "vpc_id" {
   type        = string
 }
 
+
+variable "db_endpoint" {
+  description = "RDS ProxyのWriterエンドポイント"
+  type        = string
+  default     = ""
+}
+
+variable "db_name" {
+  description = "DB名"
+  type        = string
+  default     = "kazudb"
+}
+
+variable "db_secret_arn" {
+  description = "RDS Proxy用SecretARN（databaseモジュールから）"
+  type        = string
+  default     = ""
+}

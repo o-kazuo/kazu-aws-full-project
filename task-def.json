@@ -2,7 +2,7 @@
     "containerDefinitions": [
         {
             "name": "web",
-            "image": "227811178732.dkr.ecr.ap-northeast-1.amazonaws.com/dev-web-app:278625c055d8c2e2b7c0f5017b0192716246c2fd",
+            "image": "227811178732.dkr.ecr.ap-northeast-1.amazonaws.com/dev-web-app:5d526a7ac23235672fd055968310e8a20e045589",
             "cpu": 0,
             "portMappings": [
                 {
@@ -27,7 +27,7 @@
                 },
                 {
                     "name": "LEX_BOT_ID",
-                    "value": "CGSYIOAZB2"
+                    "value": "QJNZ0HBFXQ"
                 },
                 {
                     "name": "LEX_BOT_ALIAS_ID",
@@ -36,7 +36,7 @@
             ],"secrets": [
     {
         "name": "DATABASE_URL",
-        "valueFrom": "arn:aws:secretsmanager:ap-northeast-1:227811178732:secret:dev-db-secret-v2-5uiUDT:DATABASE_URL::"
+        "valueFrom": "arn:aws:secretsmanager:ap-northeast-1:227811178732:secret:dev-db-secret-v2-DzLhNW:DATABASE_URL::"
     }
 ],
             "mountPoints": [],

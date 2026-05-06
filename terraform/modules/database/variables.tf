@@ -40,7 +40,3 @@ variable "db_password" {
   sensitive   = true
 }
 
-variable "db_secret_arn" {
-  description = "Secrets Manager シークレットARN（RDS Proxy用）"
-  type        = string
-}

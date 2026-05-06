@@ -16,7 +16,7 @@ resource "aws_kms_alias" "main" {
 
 # Secrets Manager（DBパスワード）
 resource "aws_secretsmanager_secret" "db" {
-  name       = "${var.env}-db-secret-v2"
+  name       = "${var.env}-app-secret"
   recovery_window_in_days = 0
   kms_key_id = aws_kms_key.main.arn
 
@@ -26,10 +26,9 @@ resource "aws_secretsmanager_secret" "db" {
 }
 
 resource "aws_secretsmanager_secret_version" "db" {
-  secret_id = aws_secretsmanager_secret.db.id
+  secret_id     = aws_secretsmanager_secret.db.id
   secret_string = jsonencode({
-    username = var.db_username
-    password = var.db_password
+    DATABASE_URL = "mysql+pymysql://${var.db_username}:${var.db_password}@${var.db_endpoint}:3306/${var.db_name}"
   })
 }
 

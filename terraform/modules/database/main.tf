@@ -1,3 +1,28 @@
+# RDS Proxy用Secret（username/password形式）
+resource "aws_secretsmanager_secret" "rds_proxy" {
+  name                    = "${var.env}-db-secret-v2"
+  recovery_window_in_days = 0
+  kms_key_id              = var.kms_key_arn
+
+  tags = {
+    Name = "${var.env}-db-secret"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "rds_proxy" {
+  secret_id = aws_secretsmanager_secret.rds_proxy.id
+  secret_string = jsonencode({
+    username = var.db_username
+    password = var.db_password
+    engine   = "mysql"
+    host     = aws_rds_cluster.main.endpoint
+    port     = 3306
+    dbname   = var.db_name
+  })
+
+  depends_on = [aws_rds_cluster.main]
+}
+
 # DBサブネットグループ
 resource "aws_db_subnet_group" "main" {
   name       = "${var.env}-db-subnet-group"
@@ -110,7 +135,7 @@ resource "aws_db_proxy" "main" {
   auth {
     auth_scheme = "SECRETS"
     iam_auth    = "DISABLED"
-    secret_arn  = var.db_secret_arn
+    secret_arn  = aws_secretsmanager_secret.rds_proxy.arn
   }
 
   tags = {
@@ -168,7 +193,7 @@ resource "aws_iam_role_policy" "rds_proxy_secrets" {
         "secretsmanager:GetSecretValue",
         "secretsmanager:DescribeSecret"
       ]
-      Resource = [var.db_secret_arn]
+      Resource = [aws_secretsmanager_secret.rds_proxy.arn]
     }]
   })
 }

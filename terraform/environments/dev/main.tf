@@ -36,15 +36,6 @@ module "networking" {
   cache_subnets  = var.cache_subnets  # ← 追加
 }
 
-# セキュリティ層
-module "security" {
-  source      = "../../modules/security"
-  env         = var.env
-  db_username = var.db_username
-  db_password = var.db_password
-  vpc_id      = module.networking.vpc_id  # ← 追加
-}
-
 # データベース層 ← db_secret_arn追加
 module "database" {
   source        = "../../modules/database"
@@ -56,7 +47,18 @@ module "database" {
   db_name       = var.db_name
   db_username   = var.db_username
   db_password   = var.db_password
-  db_secret_arn = module.security.db_secret_arn  # ← 追加
+}
+
+# セキュリティ層
+module "security" {
+  source      = "../../modules/security"
+  env         = var.env
+  db_username = var.db_username
+  db_password = var.db_password
+  vpc_id      = module.networking.vpc_id
+  db_endpoint = module.database.rds_proxy_endpoint
+  db_name     = var.db_name
+  db_secret_arn = module.database.db_secret_arn
 }
 
 # コンピュート層
@@ -129,6 +131,7 @@ module "container" {
   lex_bot_alias_id   = module.lex.bot_alias_id  # ← 追加
   db_secret_arn      = module.security.db_secret_arn
   kms_key_arn        = module.security.kms_key_arn
+  db_sg_id           = module.database.db_sg_id
 }
 
 # 認証層
