@@ -2,7 +2,7 @@
     "containerDefinitions": [
         {
             "name": "web",
-            "image": "227811178732.dkr.ecr.ap-northeast-1.amazonaws.com/dev-web-app:9ef20d946c76e6618c677e05c0438f5fbce917dc",
+            "image": "227811178732.dkr.ecr.ap-northeast-1.amazonaws.com/dev-web-app:ed01250a84f8aaba39314ff26f00592e559df7b1",
             "cpu": 0,
             "portMappings": [
                 {
@@ -32,12 +32,13 @@
                 {
                     "name": "LEX_BOT_ALIAS_ID",
                     "value": "TSTALIASID"
-                },
-                {
-                    "name": "DATABASE_URL",
-                    "value": "mysql+pymysql://admin:kazu6187@dev-aurora-instance-1.cr40amieu2yc.ap-northeast-1.rds.amazonaws.com:3306/kazudb"
                 }
-            ],
+            ],"secrets": [
+    {
+        "name": "DATABASE_URL",
+        "valueFrom": "arn:aws:secretsmanager:ap-northeast-1:227811178732:secret:dev-db-secret-v2-z12Mv8:DATABASE_URL::"
+    }
+],
             "mountPoints": [],
             "volumesFrom": [],
             "logConfiguration": {
