@@ -73,5 +73,5 @@ variable "notification_email" {
 variable "lambda_zip_path" {
   description = "LambdaのZIPファイルパス"
   type        = string
-  default     = "../../package/lambda_function.zip"
+  default     = "../../../package/lambda_function.zip"
 }
