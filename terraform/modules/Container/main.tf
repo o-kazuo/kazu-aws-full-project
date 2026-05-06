@@ -74,6 +74,28 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# SecretsManager & KMSアクセス権限
+resource "aws_iam_role_policy" "ecs_secrets" {
+  name = "${var.env}-ecs-secrets-policy"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = var.db_secret_arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = var.kms_key_arn
+      }
+    ]
+  })
+}
+
 # ECS Task Definition
 resource "aws_ecs_task_definition" "main" {
   family                   = "${var.env}-web-task"
@@ -97,6 +119,12 @@ resource "aws_ecs_task_definition" "main" {
       { name = "LEX_BOT_ALIAS_ID",     value = var.lex_bot_alias_id },
       { name = "BATCH_JOB_QUEUE",      value = "dev-batch-queue" },
       { name = "BATCH_JOB_DEFINITION", value = "dev-batch-job" }
+    ],
+    secrets = [
+      {
+        name      = "DATABASE_URL"
+        valueFrom = "${var.db_secret_arn}:DATABASE_URL::"
+      }
     ]
     logConfiguration = {
       logDriver = "awslogs"

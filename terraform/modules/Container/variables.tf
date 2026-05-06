@@ -43,3 +43,12 @@ variable "lex_bot_alias_id" {
   description = "Lex v2 Bot Alias ID"
   type        = string
 }
+variable "db_secret_arn" {
+  description = "SecretsManager DB Secret ARN"
+  type        = string
+}
+
+variable "kms_key_arn" {
+  description = "KMS Key ARN"
+  type        = string
+}

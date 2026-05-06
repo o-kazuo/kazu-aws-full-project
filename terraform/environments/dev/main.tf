@@ -127,6 +127,8 @@ module "container" {
   ecr_repository_url = "nginx"
   lex_bot_id         = module.lex.bot_id        # ← 追加
   lex_bot_alias_id   = module.lex.bot_alias_id  # ← 追加
+  db_secret_arn      = module.security.db_secret_arn
+  kms_key_arn        = module.security.kms_key_arn
 }
 
 # 認証層
