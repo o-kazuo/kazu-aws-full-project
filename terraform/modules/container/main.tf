@@ -177,24 +177,24 @@ resource "aws_cloudwatch_log_group" "ecs" {
 }
 
 # ECS→RDS SGルール（3306ポート）
-resource "aws_security_group_rule" "ecs_to_rds" {
+resource "aws_security_group_rule" "ecs_to_rds_proxy" {
   type                     = "egress"
   from_port                = 3306
   to_port                  = 3306
   protocol                 = "tcp"
-  source_security_group_id = var.db_sg_id
+  source_security_group_id = var.rds_proxy_sg_id
   security_group_id        = aws_security_group.ecs.id
-  description              = "ECS to RDS 3306"
+  description              = "ECS to RDS Proxy 3306"
 }
 
-resource "aws_security_group_rule" "rds_from_ecs" {
+resource "aws_security_group_rule" "rds_proxy_from_ecs" {
   type                     = "ingress"
   from_port                = 3306
   to_port                  = 3306
   protocol                 = "tcp"
   source_security_group_id = aws_security_group.ecs.id
-  security_group_id        = var.db_sg_id
-  description              = "RDS from ECS 3306"
+  security_group_id        = var.rds_proxy_sg_id
+  description              = "RDS Proxy from ECS 3306"
 }
 
 # ECS Service

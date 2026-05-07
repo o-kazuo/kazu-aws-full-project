@@ -179,6 +179,27 @@ resource "aws_db_proxy_target" "main" {
   target_group_name     = aws_db_proxy_default_target_group.main.name
 }
 
+# RDS Proxy→Aurora SGルール
+resource "aws_security_group_rule" "rds_proxy_to_aurora" {
+  type                     = "egress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.db.id
+  security_group_id        = aws_security_group.rds_proxy.id
+  description              = "RDS Proxy to Aurora 3306"
+}
+
+resource "aws_security_group_rule" "aurora_from_rds_proxy" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.rds_proxy.id
+  security_group_id        = aws_security_group.db.id
+  description              = "Aurora from RDS Proxy 3306"
+}
+
 # RDS Proxy用IAMロール
 resource "aws_iam_role" "rds_proxy" {
   name = "${var.env}-rds-proxy-role"
@@ -206,14 +227,23 @@ resource "aws_iam_role_policy" "rds_proxy_secrets" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:DescribeSecret"
-      ]
-      Resource = [aws_secretsmanager_secret.rds_proxy.arn]
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [aws_secretsmanager_secret.rds_proxy.arn]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt"
+        ]
+        Resource = [var.kms_key_arn]
+      }
+    ]
   })
 }
 

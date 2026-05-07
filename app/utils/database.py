@@ -8,7 +8,14 @@ DATABASE_URL = os.getenv(
     "mysql+pymysql://admin:password@localhost:3306/kazudb"
 )
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={
+        "ssl": {
+            "ssl_ca": "/etc/ssl/certs/ca-certificates.crt"
+        }
+    }
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
