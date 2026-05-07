@@ -17,3 +17,17 @@ output "lambda_function_name" {
   description = "Lambda関数名"
   value       = aws_lambda_function.image_resize.function_name
 }
+output "frontend_bucket_name" {
+  description = "フロントエンドS3バケット名"
+  value       = aws_s3_bucket.frontend.bucket
+}
+
+output "frontend_bucket_regional_domain_name" {
+  description = "フロントエンドS3バケットのリージョナルドメイン名"
+  value       = aws_s3_bucket.frontend.bucket_regional_domain_name
+}
+
+output "frontend_bucket_arn" {
+  description = "フロントエンドS3バケットARN"
+  value       = aws_s3_bucket.frontend.arn
+}

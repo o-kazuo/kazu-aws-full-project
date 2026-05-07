@@ -75,3 +75,82 @@ resource "aws_security_group" "batch" {
 
   tags = { Name = "${var.env}-batch-sg" }
 }
+# GitHub Actions デプロイ専用IAMユーザー
+resource "aws_iam_user" "github_actions" {
+  name = "${var.env}-github-actions-user"
+
+  tags = {
+    Name = "${var.env}-github-actions-user"
+  }
+}
+
+resource "aws_iam_user_policy" "github_actions" {
+  name = "${var.env}-github-actions-policy"
+  user = aws_iam_user.github_actions.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ECRAccess"
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ECSAccess"
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition",
+          "ecs:UpdateService",
+          "ecs:DescribeServices"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "S3Access"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.env}-frontend-${var.account_id}",
+          "arn:aws:s3:::${var.env}-frontend-${var.account_id}/*"
+        ]
+      },
+      {
+        Sid    = "ALBAccess"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:DescribeLoadBalancers"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "IAMPassRole"
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = "arn:aws:iam::${var.account_id}:role/${var.env}-ecs-task-execution-role"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_access_key" "github_actions" {
+  user = aws_iam_user.github_actions.name
+}

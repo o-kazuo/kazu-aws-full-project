@@ -37,3 +37,8 @@ variable "db_secret_arn" {
   type        = string
   default     = ""
 }
+
+variable "account_id" {
+  description = "AWSアカウントID"
+  type        = string
+}

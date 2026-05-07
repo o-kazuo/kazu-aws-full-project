@@ -51,14 +51,15 @@ module "database" {
 
 # セキュリティ層
 module "security" {
-  source      = "../../modules/security"
-  env         = var.env
-  db_username = var.db_username
-  db_password = var.db_password
-  vpc_id      = module.networking.vpc_id
-  db_endpoint = module.database.rds_proxy_endpoint
-  db_name     = var.db_name
+  source        = "../../modules/security"
+  env           = var.env
+  db_username   = var.db_username
+  db_password   = var.db_password
+  vpc_id        = module.networking.vpc_id
+  db_endpoint   = module.database.rds_proxy_endpoint
+  db_name       = var.db_name
   db_secret_arn = module.database.db_secret_arn
+  account_id    = var.account_id
 }
 
 # コンピュート層
@@ -107,8 +108,11 @@ module "cdn" {
     aws           = aws
     aws.us_east_1 = aws.us_east_1
   }
-  env          = var.env
-  alb_dns_name = module.compute.alb_dns_name
+  env                            = var.env
+  alb_dns_name                   = module.compute.alb_dns_name
+  s3_bucket_regional_domain_name = module.serverless.frontend_bucket_regional_domain_name
+  s3_bucket_name                 = module.serverless.frontend_bucket_name
+  s3_bucket_arn                  = module.serverless.frontend_bucket_arn
 }
 
 # Lex

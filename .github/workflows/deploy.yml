@@ -86,13 +86,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Get ALB DNS
-        id: alb
+      - name: Get CloudFront URL
+        id: cloudfront
         run: |
-          ALB_DNS=$(aws elbv2 describe-load-balancers \
-            --query "LoadBalancers[?contains(LoadBalancerName, 'dev-web')].DNSName" \
+          CF_URL=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='dev-cloudfront'].DomainName" \
             --output text)
-          echo "dns=$ALB_DNS" >> $GITHUB_OUTPUT
+          echo "url=$CF_URL" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -102,9 +102,9 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         env:
-          VITE_API_URL: http://${{ steps.alb.outputs.dns }}
+          VITE_API_URL: https://${{ steps.cloudfront.outputs.url }}
         run: |
-          echo "VITE_API_URL=http://${{ steps.alb.outputs.dns }}" > .env
+          echo "VITE_API_URL=https://${{ steps.cloudfront.outputs.url }}" > .env
           npm install
           npm run build
 
