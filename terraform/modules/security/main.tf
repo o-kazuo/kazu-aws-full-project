@@ -140,6 +140,15 @@ resource "aws_iam_user_policy" "github_actions" {
         Resource = "*"
       },
       {
+        Sid    = "CloudFrontAccess"
+        Effect = "Allow"
+        Action = [
+          "cloudfront:ListDistributions",
+          "cloudfront:CreateInvalidation"
+        ]
+        Resource = "*"
+      },
+      {
         Sid    = "IAMPassRole"
         Effect = "Allow"
         Action = [
