@@ -8,8 +8,7 @@ from routers import auth, ai, contents, batch, chat
 app = FastAPI(
     title="KazuAI Platform API",
     description="AIマルチメディア処理SaaSプラットフォーム",
-    version="1.0.0",
-    root_path="/api"
+    version="1.0.0"
 )
 
 app.add_middleware(
@@ -20,16 +19,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router,     prefix="/auth",     tags=["認証"])
-app.include_router(ai.router,       prefix="/ai",       tags=["AI処理"])
-app.include_router(contents.router, prefix="/contents", tags=["コンテンツ"])
-app.include_router(batch.router,    prefix="/batch",    tags=["バッチ処理"])
-app.include_router(chat.router,     prefix="/chat",     tags=["チャット"])
+app.include_router(auth.router,     prefix="/api/auth",     tags=["認証"])
+app.include_router(ai.router,       prefix="/api/ai",       tags=["AI処理"])
+app.include_router(contents.router, prefix="/api/contents", tags=["コンテンツ"])
+app.include_router(batch.router,    prefix="/api/batch",    tags=["バッチ処理"])
+app.include_router(chat.router,     prefix="/api/chat",     tags=["チャット"])
 
 @app.on_event("startup")
 def startup():
     Base.metadata.create_all(bind=engine)
 
-@app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "KazuAI Platform"}
