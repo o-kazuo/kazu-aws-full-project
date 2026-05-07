@@ -56,13 +56,6 @@ resource "aws_security_group" "db" {
   description = "Database security group"
   vpc_id      = var.vpc_id
 
-  ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = var.app_sg_ids
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -119,13 +112,6 @@ resource "aws_security_group" "rds_proxy" {
   name        = "${var.env}-rds-proxy-sg"
   description = "RDS Proxy security group"
   vpc_id      = var.vpc_id
-
-  ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = var.app_sg_ids
-  }
 
   egress {
     from_port   = 0
