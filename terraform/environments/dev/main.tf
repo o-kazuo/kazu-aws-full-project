@@ -130,12 +130,13 @@ module "container" {
   app_subnets        = module.networking.app_subnet_ids
   alb_sg_id          = module.compute.alb_sg_id
   target_group_arn   = module.compute.ecs_target_group_arn
-  ecr_repository_url = "nginx"
+  ecr_repository_url = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.env}-web-app"
   lex_bot_id         = module.lex.bot_id        # ← 追加
   lex_bot_alias_id   = module.lex.bot_alias_id  # ← 追加
   db_secret_arn      = module.security.db_secret_arn
   kms_key_arn        = module.security.kms_key_arn
   db_sg_id           = module.database.db_sg_id
+  rds_proxy_sg_id    = module.database.rds_proxy_sg_id
 }
 
 # 認証層

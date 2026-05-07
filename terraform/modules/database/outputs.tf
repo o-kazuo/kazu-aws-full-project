@@ -53,3 +53,8 @@ output "db_secret_arn" {
   description = "RDS Proxy用SecretARN"
   value       = aws_secretsmanager_secret.rds_proxy.arn
 }
+
+output "rds_proxy_sg_id" {
+  description = "RDS ProxyセキュリティグループID"
+  value       = aws_security_group.rds_proxy.id
+}

@@ -23,6 +23,24 @@ resource "aws_secretsmanager_secret_version" "rds_proxy" {
   depends_on = [aws_rds_cluster.main]
 }
 
+# Aurora MySQLパラメータグループ
+resource "aws_rds_cluster_parameter_group" "main" {
+  name        = "${var.env}-aurora-mysql8-pg"
+  family      = "aurora-mysql8.0"
+  description = "Aurora MySQL 8.0 parameter group"
+
+  parameter {
+    name  = "require_secure_transport"
+    value = "OFF"
+  }
+
+
+
+  tags = {
+    Name = "${var.env}-aurora-mysql8-pg"
+  }
+}
+
 # DBサブネットグループ
 resource "aws_db_subnet_group" "main" {
   name       = "${var.env}-db-subnet-group"
@@ -70,8 +88,9 @@ resource "aws_rds_cluster" "main" {
   vpc_security_group_ids = [aws_security_group.db.id]
   kms_key_id             = var.kms_key_arn
   storage_encrypted      = true
-  skip_final_snapshot    = true
-  deletion_protection    = false
+  skip_final_snapshot          = true
+  deletion_protection          = false
+  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.main.name
 
   serverlessv2_scaling_configuration {
     min_capacity = 0.5

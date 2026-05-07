@@ -51,6 +51,30 @@ resource "aws_security_group" "ecs" {
   }
 }
 
+# ECS タスクロール（コンテナが使うロール）
+resource "aws_iam_role" "ecs_task" {
+  name = "${var.env}-ecs-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+    }]
+  })
+
+  tags = {
+    Name = "${var.env}-ecs-task-role"
+  }
+}
+
+# ECS タスクロールにSSMアクセス権限（execute-command用）
+resource "aws_iam_role_policy_attachment" "ecs_task_ssm" {
+  role       = aws_iam_role.ecs_task.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 # ECS Task Definition用IAMロール
 resource "aws_iam_role" "ecs_task_execution" {
   name = "${var.env}-ecs-task-execution-role"
@@ -104,6 +128,7 @@ resource "aws_ecs_task_definition" "main" {
   cpu                      = "256"
   memory                   = "512"
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([{
     name      = "web"
@@ -174,11 +199,11 @@ resource "aws_security_group_rule" "rds_from_ecs" {
 
 # ECS Service
 resource "aws_ecs_service" "main" {
-  name            = "${var.env}-web-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.main.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
+  name                   = "${var.env}-web-service"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.main.arn
+  desired_count          = 1
+  launch_type            = "FARGATE"
 
   network_configuration {
     subnets          = var.app_subnets

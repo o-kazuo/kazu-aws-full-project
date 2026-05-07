@@ -31,7 +31,6 @@ variable "target_group_arn" {
 variable "ecr_repository_url" {
   description = "ECRリポジトリURL"
   type        = string
-  default     = "nginx"
 }
 
 variable "lex_bot_id" {
@@ -55,5 +54,10 @@ variable "kms_key_arn" {
 
 variable "db_sg_id" {
   description = "RDS DBセキュリティグループID"
+  type        = string
+}
+
+variable "rds_proxy_sg_id" {
+  description = "RDS ProxyセキュリティグループID"
   type        = string
 }
