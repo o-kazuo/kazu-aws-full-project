@@ -154,7 +154,10 @@ resource "aws_iam_user_policy" "github_actions" {
         Action = [
           "iam:PassRole"
         ]
-        Resource = "arn:aws:iam::${var.account_id}:role/${var.env}-ecs-task-execution-role"
+        Resource = [
+          "arn:aws:iam::${var.account_id}:role/${var.env}-ecs-task-execution-role",
+          "arn:aws:iam::${var.account_id}:role/${var.env}-ecs-task-role"
+        ]
       }
     ]
   })
