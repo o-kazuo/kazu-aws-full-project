@@ -1,11 +1,10 @@
-# RDS Proxy用Secret（username/password形式）
+# RDS Proxy用Secret（KMS暗号化なし・caching_sha2_password対応）
 resource "aws_secretsmanager_secret" "rds_proxy" {
-  name                    = "${var.env}-db-secret-v2"
+  name                    = "${var.env}-db-secret-proxy"
   recovery_window_in_days = 0
-  kms_key_id              = var.kms_key_arn
 
   tags = {
-    Name = "${var.env}-db-secret"
+    Name = "${var.env}-db-secret-proxy"
   }
 }
 
@@ -152,9 +151,10 @@ resource "aws_db_proxy" "main" {
   vpc_subnet_ids         = var.db_subnets
 
   auth {
-    auth_scheme = "SECRETS"
-    iam_auth    = "DISABLED"
-    secret_arn  = aws_secretsmanager_secret.rds_proxy.arn
+    auth_scheme               = "SECRETS"
+    iam_auth                  = "DISABLED"
+    secret_arn                = aws_secretsmanager_secret.rds_proxy.arn
+    client_password_auth_type = "MYSQL_CACHING_SHA2_PASSWORD"
   }
 
   tags = {
