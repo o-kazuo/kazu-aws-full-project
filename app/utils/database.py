@@ -15,7 +15,9 @@ DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+mysqldb://")
 engine = create_engine(
     DATABASE_URL,
     connect_args={
-        "ssl_ca": "/etc/ssl/certs/ca-certificates.crt"
+        "ssl": {
+            "ca": "/etc/ssl/certs/ca-certificates.crt"
+        }
     }
 )
 
