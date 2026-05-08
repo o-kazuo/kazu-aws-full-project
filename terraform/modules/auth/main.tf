@@ -77,3 +77,32 @@ resource "aws_apigatewayv2_authorizer" "cognito" {
     issuer   = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.main.id}"
   }
 }
+
+# テストユーザーパスワードをSecretsManagerで管理
+resource "aws_secretsmanager_secret" "test_user" {
+  name       = "${var.env}-test-user-secret"
+  kms_key_id = var.kms_key_id
+  tags = {
+    Name = "${var.env}-test-user-secret"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "test_user" {
+  secret_id     = aws_secretsmanager_secret.test_user.id
+  secret_string = jsonencode({
+    username = "hokkaido.nan@gmail.com"
+    password = "Kazu6187!"
+  })
+}
+
+# テストユーザー作成
+resource "aws_cognito_user" "test_user" {
+  user_pool_id = aws_cognito_user_pool.main.id
+  username     = jsondecode(aws_secretsmanager_secret_version.test_user.secret_string)["username"]
+  password     = jsondecode(aws_secretsmanager_secret_version.test_user.secret_string)["password"]
+
+  attributes = {
+    email          = jsondecode(aws_secretsmanager_secret_version.test_user.secret_string)["username"]
+    email_verified = "true"
+  }
+}

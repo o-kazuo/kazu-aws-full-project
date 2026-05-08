@@ -145,6 +145,7 @@ module "auth" {
   source     = "../../modules/auth"
   env        = var.env
   aws_region = var.aws_region
+  kms_key_id = module.security.kms_key_id
 }
 
 # メッセージング層

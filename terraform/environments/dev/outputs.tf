@@ -11,3 +11,13 @@ output "cloudfront_domain_name" {
   description = "CloudFrontのドメイン名"
   value       = module.cdn.cloudfront_domain_name
 }
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  value       = module.auth.user_pool_id
+}
+
+output "cognito_client_id" {
+  description = "Cognito Client ID"
+  value       = module.auth.user_pool_client_id
+}

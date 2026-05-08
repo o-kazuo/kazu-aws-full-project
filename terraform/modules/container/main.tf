@@ -136,7 +136,8 @@ resource "aws_ecs_task_definition" "main" {
       { name = "LEX_BOT_ID",           value = var.lex_bot_id },
       { name = "LEX_BOT_ALIAS_ID",     value = var.lex_bot_alias_id },
       { name = "BATCH_JOB_QUEUE",      value = "dev-batch-queue" },
-      { name = "BATCH_JOB_DEFINITION", value = "dev-batch-job" }
+      { name = "BATCH_JOB_DEFINITION", value = "dev-batch-job" },
+          { name = "S3_BUCKET_NAME",      value = "dev-input-bucket-227811178732" }
     ],
     secrets = [
       {
@@ -226,4 +227,45 @@ resource "aws_security_group_rule" "ecs_egress_all" {
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.ecs.id
   description       = "ECS outbound all"
+}
+# ECS タスクロールにDynamoDBアクセス権限
+resource "aws_iam_role_policy" "ecs_task_dynamodb" {
+  name = "${var.env}-ecs-task-dynamodb-policy"
+  role = aws_iam_role.ecs_task.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Scan",
+          "dynamodb:Query",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+        ]
+        Resource = [
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.env}-image-analysis",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.env}-user-usage",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.env}-processing-history",
+        ]
+      }
+    ]
+  })
+}
+
+# ECS タスクロールにKMSアクセス権限
+resource "aws_iam_role_policy" "ecs_task_kms" {
+  name = "${var.env}-ecs-task-kms-policy"
+  role = aws_iam_role.ecs_task.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Resource = var.kms_key_arn
+      }
+    ]
+  })
 }
