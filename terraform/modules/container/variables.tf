@@ -66,3 +66,13 @@ variable "account_id" {
   description = "AWSアカウントID"
   type        = string
 }
+
+variable "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  type        = string
+}
+
+variable "cognito_client_id" {
+  description = "Cognito Client ID"
+  type        = string
+}

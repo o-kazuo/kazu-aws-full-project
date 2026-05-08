@@ -139,6 +139,8 @@ module "container" {
   db_sg_id           = module.database.db_sg_id
   rds_proxy_sg_id    = module.database.rds_proxy_sg_id
   account_id         = var.account_id
+  cognito_user_pool_id = module.auth.user_pool_id
+  cognito_client_id    = module.auth.user_pool_client_id
 }
 
 # 認証層

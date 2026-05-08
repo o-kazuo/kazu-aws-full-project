@@ -137,7 +137,9 @@ resource "aws_ecs_task_definition" "main" {
       { name = "LEX_BOT_ALIAS_ID",     value = var.lex_bot_alias_id },
       { name = "BATCH_JOB_QUEUE",      value = "dev-batch-queue" },
       { name = "BATCH_JOB_DEFINITION", value = "dev-batch-job" },
-          { name = "S3_BUCKET_NAME",      value = "dev-input-bucket-227811178732" }
+      { name = "S3_BUCKET_NAME",      value = "dev-input-bucket-227811178732" },
+      { name = "COGNITO_USER_POOL_ID", value = var.cognito_user_pool_id },
+      { name = "COGNITO_CLIENT_ID",    value = var.cognito_client_id }
     ],
     secrets = [
       {
