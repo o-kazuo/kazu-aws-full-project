@@ -105,6 +105,7 @@ resource "aws_cloudfront_distribution" "main" {
       cookies {
         forward = "all"
       }
+      headers = ["Authorization", "Content-Type", "Origin"]
     }
 
     min_ttl     = 0
