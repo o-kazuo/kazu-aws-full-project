@@ -186,7 +186,7 @@ export default function Upload() {
               marginTop: "24px", background: "#f8faff", borderRadius: "8px",
               padding: "20px", border: "1px solid #e0e7ff"
             }}>
-              <p style={{ fontWeight: "600", marginBottom: "12px", color: "#1a1a2e" }}>
+              <p style={{ fontWeight: "600", marginBottom: "16px", color: "#1a1a2e" }}>
                 ✅ 処理完了（{result.processing_time}秒）
                 {result.usage_count && (
                   <span style={{ fontSize: "12px", color: "#999", marginLeft: "12px", fontWeight: "normal" }}>
@@ -194,13 +194,74 @@ export default function Upload() {
                   </span>
                 )}
               </p>
-              <pre style={{
-                background: "#1a1a2e", color: "#e2e8f0", padding: "16px",
-                borderRadius: "6px", overflow: "auto", fontSize: "13px",
-                maxHeight: "400px", whiteSpace: "pre-wrap", wordBreak: "break-all"
-              }}>
-                {JSON.stringify(result.result, null, 2)}
-              </pre>
+
+              {/* Rekognitionラベル検出 */}
+              {selectedService === "rekognition" && analysisType === "labels" && Array.isArray(result.result) && (
+                <div>
+                  <p style={{ fontSize: "14px", fontWeight: "600", marginBottom: "12px", color: "#555" }}>
+                    検出されたラベル
+                  </p>
+                  {result.result.map((label, i) => (
+                    <div key={i} style={{ marginBottom: "10px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                        <span style={{ fontSize: "14px", fontWeight: "500" }}>{label.Name}</span>
+                        <span style={{ fontSize: "13px", color: "#666" }}>
+                          {label.Confidence.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div style={{ background: "#e0e7ff", borderRadius: "4px", height: "8px" }}>
+                        <div style={{
+                          background: "#e94560", height: "8px", borderRadius: "4px",
+                          width: `${label.Confidence}%`, transition: "width 0.5s ease"
+                        }} />
+                      </div>
+                      {label.Categories?.length > 0 && (
+                        <span style={{
+                          fontSize: "11px", color: "#999", marginTop: "2px", display: "block"
+                        }}>
+                          カテゴリ: {label.Categories.map(c => c.Name).join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Rekognition顔検出 */}
+              {selectedService === "rekognition" && analysisType === "faces" && Array.isArray(result.result) && (
+                <div>
+                  <p style={{ fontSize: "14px", fontWeight: "600", marginBottom: "12px", color: "#555" }}>
+                    検出された顔: {result.result.length}人
+                  </p>
+                  {result.result.map((face, i) => (
+                    <div key={i} style={{
+                      background: "white", borderRadius: "8px", padding: "16px",
+                      marginBottom: "12px", border: "1px solid #e0e7ff"
+                    }}>
+                      <p style={{ fontWeight: "600", marginBottom: "8px" }}>顔 #{i + 1}</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "13px" }}>
+                        <div>😊 感情: {face.Emotions?.[0]?.Type} ({face.Emotions?.[0]?.Confidence.toFixed(1)}%)</div>
+                        <div>🎂 推定年齢: {face.AgeRange?.Low}〜{face.AgeRange?.High}歳</div>
+                        <div>👤 性別: {face.Gender?.Value === "Male" ? "男性" : "女性"} ({face.Gender?.Confidence.toFixed(1)}%)</div>
+                        <div>😎 サングラス: {face.Sunglasses?.Value ? "あり" : "なし"}</div>
+                        <div>🕶️ 眼鏡: {face.Eyeglasses?.Value ? "あり" : "なし"}</div>
+                        <div>😄 笑顔: {face.Smile?.Value ? "あり" : "なし"}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* その他サービスはJSON表示 */}
+              {selectedService !== "rekognition" && (
+                <pre style={{
+                  background: "#1a1a2e", color: "#e2e8f0", padding: "16px",
+                  borderRadius: "6px", overflow: "auto", fontSize: "13px",
+                  maxHeight: "400px", whiteSpace: "pre-wrap", wordBreak: "break-all"
+                }}>
+                  {JSON.stringify(result.result, null, 2)}
+                </pre>
+              )}
             </div>
           )}
         </div>
