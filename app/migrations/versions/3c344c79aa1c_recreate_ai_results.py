@@ -7,7 +7,6 @@ Create Date: 2026-05-08
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
 
 revision = '3c344c79aa1c'
 down_revision = None
@@ -15,13 +14,7 @@ branch_labels = None
 depends_on = None
 
 def upgrade() -> None:
-    bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
-    tables = inspector.get_table_names()
-
-    if 'ai_results' in tables:
-        op.drop_table('ai_results')
-
+    op.execute("DROP TABLE IF EXISTS ai_results")
     op.create_table(
         'ai_results',
         sa.Column('id', sa.String(36), primary_key=True),
