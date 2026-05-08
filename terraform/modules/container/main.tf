@@ -160,6 +160,44 @@ resource "aws_ecs_task_definition" "main" {
   }
 }
 
+resource "aws_ecs_task_definition" "migration" {
+  family                   = "${var.env}-migration-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
+
+  container_definitions = jsonencode([{
+    name      = "migration"
+    image     = "${var.ecr_repository_url}:latest"
+    essential = true
+    command   = ["python", "-c", "from utils.database import engine, Base; import models.user; import models.ai_result; Base.metadata.create_all(bind=engine); print('Migration completed')"]
+    environment = [
+      { name = "AWS_REGION", value = var.aws_region }
+    ]
+    secrets = [
+      {
+        name      = "DATABASE_URL"
+        valueFrom = "${var.db_secret_arn}:DATABASE_URL::"
+      }
+    ]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = "/ecs/${var.env}-migration"
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
+  }])
+
+  tags = {
+    Name = "${var.env}-migration-task"
+  }
+}
+
 # CloudWatch Logsグループ
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.env}-web"

@@ -365,3 +365,23 @@ resource "aws_dynamodb_table" "macie_findings" {
     Name = "${var.env}-macie-findings"
   }
 }
+
+resource "aws_security_group_rule" "ecs_to_aurora" {
+  type                     = "egress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = var.app_sg_ids[0]
+  security_group_id        = aws_security_group.db.id
+  description              = "ECS migration task to Aurora direct"
+}
+
+resource "aws_security_group_rule" "aurora_from_ecs" {
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = var.app_sg_ids[0]
+  security_group_id        = aws_security_group.db.id
+  description              = "Aurora from ECS migration task"
+}
