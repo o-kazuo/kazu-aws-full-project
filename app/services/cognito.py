@@ -1,11 +1,12 @@
 import boto3
-import hmac
-import hashlib
-import base64
+import os
 from botocore.exceptions import ClientError
 
-USER_POOL_ID = "ap-northeast-1_QlvfQKQso"
-CLIENT_ID = "fo8ldlqf7qqgmcoj9gi2nfs3s"
+USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
+CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
+REGION = os.getenv("AWS_REGION", "ap-northeast-1")
+
+client = boto3.client("cognito-idp", region_name=REGION)
 REGION = "ap-northeast-1"
 
 client = boto3.client("cognito-idp", region_name=REGION)
