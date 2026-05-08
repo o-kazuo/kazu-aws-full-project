@@ -4,6 +4,9 @@ import models.ai_result
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, ai, contents, batch, chat
+from alembic.config import Config
+from alembic import command
+import os
 
 app = FastAPI(
     title="KazuAI Platform API",
@@ -13,7 +16,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://d93x0bhy6yxf8.cloudfront.net"],
+    allow_origins=["https://dbpdphg1z541d.cloudfront.net"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,7 +30,10 @@ app.include_router(chat.router,     prefix="/api/chat",     tags=["チャット"
 
 @app.on_event("startup")
 def startup():
-    Base.metadata.create_all(bind=engine)
+    # Alembicマイグレーション実行
+    alembic_cfg = Config("/app/alembic.ini")
+    alembic_cfg.set_main_option("script_location", "/app/migrations")
+    command.upgrade(alembic_cfg, "head")
 
 @app.get("/api/health")
 def health_check():
