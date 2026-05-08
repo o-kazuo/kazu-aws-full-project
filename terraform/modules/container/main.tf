@@ -343,3 +343,11 @@ resource "aws_iam_role_policy" "ecs_task_rekognition" {
     ]
   })
 }
+
+resource "aws_cloudwatch_log_group" "migration" {
+  name              = "/ecs/${var.env}-migration"
+  retention_in_days = 7
+  tags = {
+    Name = "${var.env}-migration-logs"
+  }
+}
