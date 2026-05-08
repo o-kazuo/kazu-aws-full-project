@@ -144,7 +144,20 @@ resource "aws_iam_role_policy" "github_actions" {
           "ecs:DescribeTaskDefinition",
           "ecs:RegisterTaskDefinition",
           "ecs:UpdateService",
-          "ecs:DescribeServices"
+          "ecs:DescribeServices",
+          "ecs:RunTask",
+          "ecs:DescribeTasks",
+          "ecs:WaitUntilTasksStopped",
+          "iam:PassRole"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "EC2Access"
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeSubnets",
+          "ec2:DescribeSecurityGroups"
         ]
         Resource = "*"
       },
