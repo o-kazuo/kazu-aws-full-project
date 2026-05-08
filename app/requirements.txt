@@ -8,4 +8,5 @@ python-multipart==0.0.9
 sqlalchemy==2.0.35
 redis==5.0.8
 mysqlclient==2.2.4
-cryptography==41.0.7alembic==1.13.3
+cryptography==41.0.7
+alembic==1.13.3
