@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, ai, contents, batch, chat
 from alembic.config import Config
 from alembic import command
-import os
 
 app = FastAPI(
     title="KazuAI Platform API",
