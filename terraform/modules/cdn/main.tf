@@ -18,45 +18,25 @@ resource "aws_wafv2_web_acl" "main" {
     allow {}
   }
 
-  # SQLインジェクション対策
-  rule {
-    name     = "AWSManagedRulesSQLiRuleSet"
-    priority = 1
-
-    override_action {
-      none {}
-    }
-
-    statement {
-      managed_rule_group_statement {
-        name        = "AWSManagedRulesSQLiRuleSet"
-        vendor_name = "AWS"
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "SQLiRuleSet"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  # 一般的な攻撃対策
-  rule {
+  # SQLインジェクション対策解除してるからまた設定
+ rule {
     name     = "AWSManagedRulesCommonRuleSet"
     priority = 2
-
     override_action {
       none {}
     }
-
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
+        rule_action_override {
+          name = "SizeRestrictions_BODY"
+          action_to_use {
+            allow {}
+          }
+        }
       }
     }
-
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                = "CommonRuleSet"
