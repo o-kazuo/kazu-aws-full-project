@@ -7,6 +7,7 @@ Create Date: 2026-05-08
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.engine.reflection import Inspector
 
 revision = '3c344c79aa1c'
 down_revision = None
@@ -14,8 +15,13 @@ branch_labels = None
 depends_on = None
 
 def upgrade() -> None:
-    # 既存テーブルを削除して再作成
-    op.drop_table('ai_results')
+    bind = op.get_bind()
+    inspector = Inspector.from_engine(bind)
+    tables = inspector.get_table_names()
+
+    if 'ai_results' in tables:
+        op.drop_table('ai_results')
+
     op.create_table(
         'ai_results',
         sa.Column('id', sa.String(36), primary_key=True),
@@ -26,17 +32,8 @@ def upgrade() -> None:
         sa.Column('status', sa.String(20), nullable=False, server_default='processing'),
         sa.Column('processing_time', sa.Float, nullable=True),
         sa.Column('created_at', sa.DateTime, server_default=sa.func.now()),
-        sa.Column('updated_at', sa.DateTime, server_default=sa.func.now(), onupdate=sa.func.now()),
+        sa.Column('updated_at', sa.DateTime, server_default=sa.func.now()),
     )
 
 def downgrade() -> None:
     op.drop_table('ai_results')
-    op.create_table(
-        'ai_results',
-        sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('user_id', sa.Integer, index=True),
-        sa.Column('service_type', sa.String(50)),
-        sa.Column('input_data', sa.Text),
-        sa.Column('output_data', sa.Text),
-        sa.Column('created_at', sa.DateTime, server_default=sa.func.now()),
-    )
