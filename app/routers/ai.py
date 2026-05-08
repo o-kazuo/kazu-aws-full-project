@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from utils.auth import get_current_user
 from utils.database import get_db
 from utils.s3 import upload_file_to_s3, get_presigned_url
-from utils.dynamodb import check_usage_limit, increment_usage, add_processing_history
+from utils.dynamodb import check_usage_limit, increment_usage, add_processing_history, get_image_analysis_list, get_image_analysis_by_key
 from services.rekognition import detect_labels, detect_faces
 from services.transcribe import transcribe_audio
 from services.translate import translate_text
@@ -360,3 +360,39 @@ def get_result(
         result_dict["download_url"] = get_presigned_url(result.input_s3_key)
 
     return result_dict
+
+# app/routers/ai.py の末尾に追加
+
+
+# ============================================================
+# GET /ai/image-analysis  — Lambda経由のRekognition結果一覧
+# ============================================================
+@router.get("/image-analysis")
+def list_image_analysis(
+    limit: int = Query(default=20, le=100),
+    current_user: dict = Depends(get_current_user),
+):
+    try:
+        items = get_image_analysis_list(limit)
+        return {"items": items, "count": len(items)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# GET /ai/image-analysis/{image_key}  — 特定画像の分析結果
+# ============================================================
+@router.get("/image-analysis/{image_key:path}")
+def get_image_analysis(
+    image_key: str,
+    current_user: dict = Depends(get_current_user),
+):
+    try:
+        item = get_image_analysis_by_key(image_key)
+        if not item:
+            raise HTTPException(status_code=404, detail="分析結果が見つかりません")
+        return item
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

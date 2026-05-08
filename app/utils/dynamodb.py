@@ -128,3 +128,39 @@ def get_processing_history(user_id: str, limit: int = 20) -> list:
 def get_dynamodb_client():
     """DynamoDBクライアントを返す"""
     return boto3.client("dynamodb", region_name=REGION)
+
+    # app/utils/dynamodb.py の末尾に追加
+
+IMAGE_ANALYSIS_TABLE = f"{ENV}-image-analysis"
+
+def get_image_analysis_list(limit: int = 20) -> list:
+    """
+    dev-image-analysisテーブルから最新の分析結果一覧を取得
+    """
+    try:
+        table = dynamodb.Table(IMAGE_ANALYSIS_TABLE)
+        response = table.scan(Limit=limit)
+        items = response.get("Items", [])
+        # analyzed_atで降順ソート
+        items.sort(key=lambda x: x.get("analyzed_at", ""), reverse=True)
+        return items
+    except ClientError as e:
+        raise Exception(f"画像分析結果取得失敗: {e.response['Error']['Message']}")
+
+def get_image_analysis_by_key(image_key: str) -> dict:
+    """
+    特定のimage_keyの分析結果を取得
+    """
+    try:
+        table = dynamodb.Table(IMAGE_ANALYSIS_TABLE)
+        response = table.query(
+            KeyConditionExpression=Key("image_key").eq(image_key),
+            ScanIndexForward=False,
+            Limit=1,
+        )
+        items = response.get("Items", [])
+        if not items:
+            return None
+        return items[0]
+    except ClientError as e:
+        raise Exception(f"画像分析結果取得失敗: {e.response['Error']['Message']}")
