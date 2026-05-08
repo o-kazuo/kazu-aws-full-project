@@ -50,3 +50,12 @@ terraform/secrets.tf
 # AWS CLI installer
 awscliv2.zip
 aws/
+
+# Lambda ZIPファイル（バイナリ・大容量）
+*.zip
+
+# GitHub Actionsが自動生成するファイル
+task-def.json
+
+# ビルド成果物
+lambda_build/

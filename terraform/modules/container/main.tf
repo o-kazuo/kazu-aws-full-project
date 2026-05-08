@@ -39,13 +39,6 @@ resource "aws_security_group" "ecs" {
     security_groups = [var.alb_sg_id]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = {
     Name = "${var.env}-ecs-sg"
   }
@@ -224,3 +217,13 @@ resource "aws_ecs_service" "main" {
   }
 }
 
+# ECSの全アウトバウンド通信許可
+resource "aws_security_group_rule" "ecs_egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.ecs.id
+  description       = "ECS outbound all"
+}

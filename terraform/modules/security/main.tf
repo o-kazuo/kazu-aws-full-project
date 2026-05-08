@@ -75,18 +75,49 @@ resource "aws_security_group" "batch" {
 
   tags = { Name = "${var.env}-batch-sg" }
 }
-# GitHub Actions デプロイ専用IAMユーザー
-resource "aws_iam_user" "github_actions" {
-  name = "${var.env}-github-actions-user"
+# GitHub Actions OIDC Provider
+resource "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
+
+  client_id_list = ["sts.amazonaws.com"]
+
+  # GitHubのOIDC証明書のサムプリント（固定値）
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+}
+
+# GitHub Actions用IAMロール（ユーザーの代わり）
+resource "aws_iam_role" "github_actions" {
+  name = "${var.env}-github-actions-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.github.arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+        StringLike = {
+          # リポジトリ名を限定（セキュリティ上重要！）
+          "token.actions.githubusercontent.com:sub" = "repo:o-kazuo/kazu-aws-full-project:*"
+        }
+      }
+    }]
+  })
 
   tags = {
-    Name = "${var.env}-github-actions-user"
+    Name = "${var.env}-github-actions-role"
   }
 }
 
-resource "aws_iam_user_policy" "github_actions" {
+# ポリシーはそのまま流用（userからroleに付け替えるだけ）
+resource "aws_iam_role_policy" "github_actions" {
   name = "${var.env}-github-actions-policy"
-  user = aws_iam_user.github_actions.name
+  role = aws_iam_role.github_actions.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -161,8 +192,4 @@ resource "aws_iam_user_policy" "github_actions" {
       }
     ]
   })
-}
-
-resource "aws_iam_access_key" "github_actions" {
-  user = aws_iam_user.github_actions.name
 }

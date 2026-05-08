@@ -19,13 +19,8 @@ output "ec2_role_name" {
 }
 
 output "batch_sg_id" { value = aws_security_group.batch.id }
-output "github_actions_access_key_id" {
-  description = "GitHub Actions用アクセスキーID"
-  value       = aws_iam_access_key.github_actions.id
-}
 
-output "github_actions_secret_access_key" {
-  description = "GitHub Actions用シークレットアクセスキー"
-  value       = aws_iam_access_key.github_actions.secret
-  sensitive   = true
+output "github_actions_role_arn" {
+  description = "GitHub Actions用IAMロールARN"
+  value       = aws_iam_role.github_actions.arn
 }

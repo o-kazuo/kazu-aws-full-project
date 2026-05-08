@@ -56,13 +56,6 @@ resource "aws_security_group" "db" {
   description = "Database security group"
   vpc_id      = var.vpc_id
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   tags = {
     Name = "${var.env}-db-sg"
   }
@@ -112,13 +105,6 @@ resource "aws_security_group" "rds_proxy" {
   name        = "${var.env}-rds-proxy-sg"
   description = "RDS Proxy security group"
   vpc_id      = var.vpc_id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   tags = {
     Name = "${var.env}-rds-proxy-sg"
@@ -231,6 +217,28 @@ resource "aws_iam_role_policy" "rds_proxy_secrets" {
       }
     ]
   })
+}
+
+# RDS Proxyの全アウトバウンド通信許可
+resource "aws_security_group_rule" "rds_proxy_egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.rds_proxy.id
+  description       = "RDS Proxy outbound all"
+}
+
+# Aurora DBの全アウトバウンド通信許可
+resource "aws_security_group_rule" "db_egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.db.id
+  description       = "Aurora DB outbound all"
 }
 
 # ===== DynamoDB テーブル =====

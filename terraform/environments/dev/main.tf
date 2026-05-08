@@ -80,6 +80,7 @@ module "serverless" {
   kms_key_arn        = module.security.kms_key_arn
   notification_email = var.notification_email
   lambda_zip_path    = var.lambda_zip_path
+  aws_region         = var.aws_region  # ← 追加
 }
 
 # 監視層
@@ -156,7 +157,7 @@ module "messaging" {
 module "governance" {
   source            = "../../modules/governance"
   env               = var.env
-  cloudtrail_bucket = module.serverless.input_bucket_name
+  cloudtrail_bucket = module.serverless.cloudtrail_bucket_name  # ← 変更
 }
 
 # ===== ここから追加 =====

@@ -31,3 +31,8 @@ output "frontend_bucket_arn" {
   description = "フロントエンドS3バケットARN"
   value       = aws_s3_bucket.frontend.arn
 }
+
+output "cloudtrail_bucket_name" {
+  description = "CloudTrail専用S3バケット名"
+  value       = aws_s3_bucket.cloudtrail.bucket
+}

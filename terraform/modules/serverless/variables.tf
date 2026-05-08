@@ -22,3 +22,8 @@ variable "lambda_zip_path" {
   description = "LambdaのZIPファイルパス"
   type        = string
 }
+
+variable "aws_region" {
+  description = "AWSリージョン"
+  type        = string
+}
