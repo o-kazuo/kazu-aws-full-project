@@ -61,3 +61,8 @@ variable "rds_proxy_sg_id" {
   description = "RDS ProxyセキュリティグループID"
   type        = string
 }
+
+variable "account_id" {
+  description = "AWSアカウントID"
+  type        = string
+}

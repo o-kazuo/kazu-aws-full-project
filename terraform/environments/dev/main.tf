@@ -138,6 +138,7 @@ module "container" {
   kms_key_arn        = module.security.kms_key_arn
   db_sg_id           = module.database.db_sg_id
   rds_proxy_sg_id    = module.database.rds_proxy_sg_id
+  account_id         = var.account_id
 }
 
 # 認証層

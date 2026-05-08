@@ -269,3 +269,24 @@ resource "aws_iam_role_policy" "ecs_task_kms" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "ecs_task_s3" {
+  name = "${var.env}-ecs-task-s3-policy"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "arn:aws:s3:::${var.env}-input-bucket-${var.account_id}/*"
+      }
+    ]
+  })
+}
+
