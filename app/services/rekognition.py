@@ -1,3 +1,8 @@
+import boto3
+import os
+
+rekognition_client = boto3.client('rekognition', region_name=os.getenv('AWS_REGION', 'ap-northeast-1'))
+
 def detect_labels(s3_key: str) -> list:
     response = rekognition_client.detect_labels(
         Image={
