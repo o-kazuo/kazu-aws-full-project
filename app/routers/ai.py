@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query, 
 from sqlalchemy.orm import Session
 
 from utils.auth import get_current_user
-from utils.database import get_db
+from utils.database import get_db, get_db_reader
 from utils.s3 import upload_file_to_s3, get_presigned_url
 from utils.dynamodb import check_usage_limit, increment_usage, add_processing_history, get_image_analysis_list, get_image_analysis_by_key
 from services.rekognition import detect_labels, detect_faces
@@ -325,7 +325,7 @@ def get_usage(current_user: dict = Depends(get_current_user)):
 @router.get("/results")
 def get_results(
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_reader),
     limit: int = Query(default=20, le=100),
 ):
     results = (
@@ -345,7 +345,7 @@ def get_results(
 def get_result(
     id: str,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db_reader),
 ):
     result = db.query(AiResult).filter(
         AiResult.id == id,
