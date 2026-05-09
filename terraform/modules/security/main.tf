@@ -26,9 +26,10 @@ resource "aws_secretsmanager_secret" "db" {
 }
 
 resource "aws_secretsmanager_secret_version" "db" {
-  secret_id     = aws_secretsmanager_secret.db.id
+  secret_id = aws_secretsmanager_secret.db.id
   secret_string = jsonencode({
-    DATABASE_URL = "mysql+pymysql://${var.db_username}:${var.db_password}@${var.db_endpoint}:3306/${var.db_name}"
+    DATABASE_URL_WRITER = "mysql+pymysql://${var.db_username}:${var.db_password}@${var.rds_proxy_endpoint}:3306/${var.db_name}"
+    DATABASE_URL_READER = "mysql+pymysql://${var.db_username}:${var.db_password}@${var.rds_proxy_reader_endpoint}:3306/${var.db_name}"
   })
 }
 
@@ -123,10 +124,15 @@ resource "aws_iam_role_policy" "github_actions" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "ECRAccess"
+        Sid    = "ECRAuthAccess"
+        Effect = "Allow"
+        Action = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        Sid    = "ECRRepoAccess"
         Effect = "Allow"
         Action = [
-          "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
@@ -135,7 +141,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "ecr:CompleteLayerUpload",
           "ecr:PutImage"
         ]
-        Resource = "*"
+        Resource = "arn:aws:ecr:${var.aws_region}:${var.account_id}:repository/${var.env}-web-app"
       },
       {
         Sid    = "ECSAccess"
@@ -150,7 +156,13 @@ resource "aws_iam_role_policy" "github_actions" {
           "ecs:WaitUntilTasksStopped",
           "iam:PassRole"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:cluster/${var.env}-ecs-cluster",
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:service/${var.env}-ecs-cluster/${var.env}-web-service",
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task-definition/${var.env}-web-task:*",
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task-definition/${var.env}-migration-task:*",
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task/${var.env}-ecs-cluster/*"
+        ]
       },
       {
         Sid    = "EC2Access"
