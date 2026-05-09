@@ -17,7 +17,7 @@ SSL_ARGS = {
 # Writer（書き込み用）
 DATABASE_URL_WRITER = _build_url(
     "DATABASE_URL_WRITER",
-    "mysql://admin:password@localhost:3306/kazudb"
+    os.getenv("DATABASE_URL", "mysql://admin:password@localhost:3306/kazudb")
 )
 engine_writer = create_engine(DATABASE_URL_WRITER, connect_args=SSL_ARGS)
 SessionWriter = sessionmaker(autocommit=False, autoflush=False, bind=engine_writer)
