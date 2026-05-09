@@ -124,24 +124,32 @@ resource "aws_iam_role_policy" "github_actions" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "ECRAuthAccess"
+        Sid    = "ECSDescribeAccess"
         Effect = "Allow"
-        Action = ["ecr:GetAuthorizationToken"]
+        Action = [
+          "ecs:DescribeTaskDefinition",
+          "ecs:DescribeServices",
+          "ecs:DescribeTasks"
+        ]
         Resource = "*"
       },
       {
-        Sid    = "ECRRepoAccess"
+        Sid    = "ECSWriteAccess"
         Effect = "Allow"
         Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload",
-          "ecr:PutImage"
+          "ecs:RegisterTaskDefinition",
+          "ecs:UpdateService",
+          "ecs:RunTask",
+          "ecs:WaitUntilTasksStopped",
+          "iam:PassRole"
         ]
-        Resource = "arn:aws:ecr:${var.aws_region}:${var.account_id}:repository/${var.env}-web-app"
+        Resource = [
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:cluster/${var.env}-ecs-cluster",
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:service/${var.env}-ecs-cluster/${var.env}-web-service",
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task-definition/${var.env}-web-task:*",
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task-definition/${var.env}-migration-task:*",
+          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task/${var.env}-ecs-cluster/*"
+        ]
       },
       {
         Sid    = "ECSAccess"
