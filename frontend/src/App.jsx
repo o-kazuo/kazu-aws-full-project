@@ -13,26 +13,50 @@ export default function App() {
     <div style={{ minHeight: "100vh", background: "#f0f2f5" }}>
       {/* ナビゲーションバー */}
       <nav style={{
-        background: "#1a1a2e", color: "white", padding: "0 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between", height: "60px"
+        background: "#1a1a2e",
+        color: "white",
+        padding: "0 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        height: "60px",
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
       }}>
-        <span style={{ fontSize: "20px", fontWeight: "bold", color: "#e94560" }}>
-          🤖 KazuAI Platform
+        <span style={{ fontSize: "18px", fontWeight: "bold", color: "#e94560", whiteSpace: "nowrap" }}>
+          🤖 KazuAI
         </span>
-        <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
           <NavLink to="/dashboard" style={({ isActive }) => ({
-            color: isActive ? "#e94560" : "white", textDecoration: "none", fontWeight: "500"
+            color: isActive ? "#e94560" : "white",
+            textDecoration: "none",
+            fontWeight: "500",
+            fontSize: "14px",
+            whiteSpace: "nowrap"
           })}>
             ダッシュボード
           </NavLink>
           <NavLink to="/upload" style={({ isActive }) => ({
-            color: isActive ? "#e94560" : "white", textDecoration: "none", fontWeight: "500"
+            color: isActive ? "#e94560" : "white",
+            textDecoration: "none",
+            fontWeight: "500",
+            fontSize: "14px",
+            whiteSpace: "nowrap"
           })}>
             AI処理
           </NavLink>
           <button onClick={handleLogout} style={{
-            background: "#e94560", color: "white", border: "none",
-            padding: "6px 16px", borderRadius: "6px", cursor: "pointer"
+            background: "#e94560",
+            color: "white",
+            border: "none",
+            padding: "6px 14px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "13px",
+            fontWeight: "bold",
+            whiteSpace: "nowrap"
           }}>
             ログアウト
           </button>
@@ -40,7 +64,11 @@ export default function App() {
       </nav>
 
       {/* メインコンテンツ */}
-      <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 16px" }}>
+      <main style={{
+        maxWidth: "1100px",
+        margin: "0 auto",
+        padding: "24px 16px"
+      }}>
         <Outlet />
       </main>
     </div>
