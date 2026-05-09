@@ -82,6 +82,7 @@ resource "aws_apigatewayv2_authorizer" "cognito" {
 resource "aws_secretsmanager_secret" "test_user" {
   name       = "${var.env}-test-user-secret"
   kms_key_id = var.kms_key_id
+  recovery_window_in_days = 0  # ← 追加(毎回destroyするため)
   tags = {
     Name = "${var.env}-test-user-secret"
   }
