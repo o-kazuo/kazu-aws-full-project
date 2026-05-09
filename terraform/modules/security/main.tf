@@ -16,9 +16,9 @@ resource "aws_kms_alias" "main" {
 
 # Secrets Manager（DBパスワード）
 resource "aws_secretsmanager_secret" "db" {
-  name       = "${var.env}-app-secret"
+  name                    = "${var.env}-app-secret"
   recovery_window_in_days = 0
-  kms_key_id = aws_kms_key.main.arn
+  kms_key_id              = aws_kms_key.main.arn
 
   tags = {
     Name = "${var.env}-db-secret"
@@ -76,6 +76,7 @@ resource "aws_security_group" "batch" {
 
   tags = { Name = "${var.env}-batch-sg" }
 }
+
 # GitHub Actions OIDC Provider
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
@@ -86,7 +87,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
-# GitHub Actions用IAMロール（ユーザーの代わり）
+# GitHub Actions用IAMロール
 resource "aws_iam_role" "github_actions" {
   name = "${var.env}-github-actions-role"
 
@@ -115,7 +116,7 @@ resource "aws_iam_role" "github_actions" {
   }
 }
 
-# ポリシーはそのまま流用（userからroleに付け替えるだけ）
+# GitHub Actions IAMポリシー
 resource "aws_iam_role_policy" "github_actions" {
   name = "${var.env}-github-actions-policy"
   role = aws_iam_role.github_actions.id
@@ -123,6 +124,26 @@ resource "aws_iam_role_policy" "github_actions" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      {
+        Sid      = "ECRAuthAccess"
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        Sid    = "ECRRepoAccess"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
+        ]
+        Resource = "arn:aws:ecr:${var.aws_region}:${var.account_id}:repository/${var.env}-web-app"
+      },
       {
         Sid    = "ECSDescribeAccess"
         Effect = "Allow"
@@ -140,29 +161,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "ecs:RegisterTaskDefinition",
           "ecs:UpdateService",
           "ecs:RunTask",
-          "ecs:WaitUntilTasksStopped",
-          "iam:PassRole"
-        ]
-        Resource = [
-          "arn:aws:ecs:${var.aws_region}:${var.account_id}:cluster/${var.env}-ecs-cluster",
-          "arn:aws:ecs:${var.aws_region}:${var.account_id}:service/${var.env}-ecs-cluster/${var.env}-web-service",
-          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task-definition/${var.env}-web-task:*",
-          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task-definition/${var.env}-migration-task:*",
-          "arn:aws:ecs:${var.aws_region}:${var.account_id}:task/${var.env}-ecs-cluster/*"
-        ]
-      },
-      {
-        Sid    = "ECSAccess"
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition",
-          "ecs:UpdateService",
-          "ecs:DescribeServices",
-          "ecs:RunTask",
-          "ecs:DescribeTasks",
-          "ecs:WaitUntilTasksStopped",
-          "iam:PassRole"
+          "ecs:WaitUntilTasksStopped"
         ]
         Resource = [
           "arn:aws:ecs:${var.aws_region}:${var.account_id}:cluster/${var.env}-ecs-cluster",
