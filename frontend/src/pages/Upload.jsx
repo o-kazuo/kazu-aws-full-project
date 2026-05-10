@@ -7,7 +7,7 @@ const SERVICES = [
   { id: "textract", label: "📄 文書抽出", desc: "PDF・画像からテキスト抽出", type: "file", accept: "image/*,application/pdf" },
   { id: "translate", label: "🌐 翻訳", desc: "テキストを多言語に翻訳", type: "text" },
   { id: "comprehend", label: "📊 テキスト分析", desc: "感情・キーフレーズ・エンティティ検出", type: "text" },
-  { id: "bedrock", label: "🤖 生成AI", desc: "Claude 3 Haikuでテキスト生成", type: "text" },
+  { id: "bedrock", label: "🤖 生成AI", desc: "Claude Haiku 4.5でテキスト生成", type: "text" },
 ];
 
 const LABEL_JA = {
@@ -30,12 +30,12 @@ const LABEL_JA = {
   Light: "光", Shadow: "影", Snow: "雪", Rain: "雨", Fire: "火",
   Smoke: "煙", Fog: "霧", Desert: "砂漠", Rock: "岩", Stone: "石",
   Sand: "砂", Soil: "土", Leaf: "葉", Branch: "枝", Root: "根",
-  Sunset: "夕焼け", Sunrise: "日の出", Rainbow: "虹", Storm: "嵐",
-  Waterfall: "滝", Valley: "谷", Hill: "丘", Field: "畑・野原",
-  Farm: "農場", Garden: "庭園", Park: "公園", Bridge: "橋",
-  Tower: "塔", Castle: "城", Church: "教会", Temple: "寺院",
-  Market: "市場", Shop: "店", Restaurant: "レストラン", Hotel: "ホテル",
-  Hospital: "病院", School: "学校", Library: "図書館", Museum: "博物館",
+  Rainbow: "虹", Storm: "嵐", Waterfall: "滝", Valley: "谷",
+  Hill: "丘", Field: "畑・野原", Farm: "農場", Garden: "庭園",
+  Park: "公園", Bridge: "橋", Tower: "塔", Castle: "城",
+  Church: "教会", Temple: "寺院", Market: "市場", Shop: "店",
+  Restaurant: "レストラン", Hotel: "ホテル", Hospital: "病院",
+  School: "学校", Library: "図書館", Museum: "博物館",
   Stadium: "スタジアム", Airport: "空港", Station: "駅", Harbor: "港",
   Swimming: "水泳", Running: "ランニング", Cycling: "サイクリング",
   Hiking: "ハイキング", Camping: "キャンプ", Fishing: "釣り",
@@ -43,7 +43,7 @@ const LABEL_JA = {
   Writing: "書く", Drawing: "描く", Painting: "絵画", Music: "音楽",
   Dance: "ダンス", Performance: "パフォーマンス", Concert: "コンサート",
   Wedding: "結婚式", Party: "パーティー", Celebration: "お祝い",
-  Sunrise: "日の出", Sunset: "夕焼け", Twilight: "薄明かり",
+  Twilight: "薄明かり",
 };
 
 const CATEGORY_JA = {
@@ -405,21 +405,6 @@ export default function Upload() {
                 </div>
               )}
 
-              {/* その他サービスはJSON表示 */}
-              {selectedService !== "rekognition" && (
-                <pre style={{
-                  background: "#1a1a2e",
-                  color: "#e2e8f0",
-                  padding: "16px",
-                  borderRadius: "8px",
-                  overflow: "auto",
-                  fontSize: "13px",
-                  maxHeight: "400px",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-all"
-                }}>
-                  {JSON.stringify(result.result, null, 2)}
-                </pre>
               {/* Bedrock生成AI */}
               {selectedService === "bedrock" && (
                 <div style={{
@@ -451,7 +436,7 @@ export default function Upload() {
                 }}>
                   {JSON.stringify(result.result, null, 2)}
                 </pre>
-              )}}
+              )}
             </div>
           )}
         </div>
