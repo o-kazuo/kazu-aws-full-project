@@ -1,3 +1,5 @@
+# KazuAI Platform
+
 ---
 
 ## 🚀 デプロイ手順
