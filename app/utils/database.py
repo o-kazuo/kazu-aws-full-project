@@ -17,20 +17,20 @@ SSL_ARGS = {
 # Writer（書き込み用）
 DATABASE_URL_WRITER = _build_url(
     "DATABASE_URL_WRITER",
-    os.getenv("DATABASE_URL", "mysql://admin:password@localhost:3306/kazudb")
+    "mysql://admin:password@localhost:3306/kazudb"
 )
 engine_writer = create_engine(DATABASE_URL_WRITER, connect_args=SSL_ARGS)
 SessionWriter = sessionmaker(autocommit=False, autoflush=False, bind=engine_writer)
 
-# Reader（読み込み用）
+# Reader（読み込み用）- Aurora Serverless v2単一インスタンスのためWriterを使用
 DATABASE_URL_READER = _build_url(
-    "DATABASE_URL_READER",
-    "mysql://admin:password@localhost:3306/kazudb"  # ローカルはWriterと同じでOK
+    "DATABASE_URL_WRITER",  # 本番ではDATA_URL_READERに変更してReaderインスタンスを追加
+    "mysql://admin:password@localhost:3306/kazudb"
 )
 engine_reader = create_engine(DATABASE_URL_READER, connect_args=SSL_ARGS)
 SessionReader = sessionmaker(autocommit=False, autoflush=False, bind=engine_reader)
 
-# マイグレーション用（既存互換・Writerと同じ）
+# マイグレーション用
 engine = engine_writer
 Base = declarative_base()
 
@@ -43,7 +43,7 @@ def get_db():
         db.close()
 
 def get_db_reader():
-    """読み込み用セッション"""
+    """読み込み用セッション（現在はWriterと同じエンドポイント）"""
     db = SessionReader()
     try:
         yield db
