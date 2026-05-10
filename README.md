@@ -73,6 +73,8 @@ TextractはTokyoリージョン（ap-northeast-1）未対応のため、us-east-
 - **エッジ保護**：WAF v2でSQLi・XSS・DDoSをエッジで遮断
 - **監査**：CloudTrailで全API操作を記録・専用S3バケットに保存
 - **個人情報保護**：Macieによる個人情報（PII）検出
+- **閉域通信の徹底**：S3・DynamoDBへのVPCゲートウェイエンドポイントを設置し、インターネットを経由しない内部ネットワーク通信を実現。セキュリティ向上とNATゲートウェイのコスト削減を同時に達成。
+- **全リソース暗号化**：KMSによりS3・RDS・DynamoDB・SecretsManagerの全データを暗号化。鍵のポリシーも特定ARNに絞り込んだ最小権限設計。
 
 ---
 
