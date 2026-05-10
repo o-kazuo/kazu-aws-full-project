@@ -3,7 +3,8 @@ import os
 from botocore.exceptions import ClientError
 
 REGION = "us-east-1"
-INPUT_BUCKET = os.environ.get("INPUT_BUCKET", "dev-input-bucket-227811178732")
+TEXTRACT_BUCKET = "dev-textract-227811178732"
+INPUT_BUCKET = "dev-textract-227811178732"
 
 textract_client = boto3.client("textract", region_name=REGION)
 

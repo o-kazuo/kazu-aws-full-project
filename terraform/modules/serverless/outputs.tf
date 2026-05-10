@@ -36,3 +36,7 @@ output "cloudtrail_bucket_name" {
   description = "CloudTrail専用S3バケット名"
   value       = aws_s3_bucket.cloudtrail.bucket
 }
+output "textract_bucket_name" {
+  description = "Textract用S3バケット名（us-east-1）"
+  value       = aws_s3_bucket.textract.bucket
+}

@@ -221,7 +221,7 @@ def textract(
     db.refresh(ai_result)
 
     try:
-        upload_file_to_s3(file.file.read(), s3_key, file.content_type)
+        upload_file_to_s3(file.file.read(), s3_key, file.content_type, bucket="dev-textract-227811178732")
         start = time.time()
         result = analyze_document(s3_key) if mode == "analyze" else extract_text(s3_key)
         processing_time = round(time.time() - start, 2)

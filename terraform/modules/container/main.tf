@@ -328,7 +328,10 @@ resource "aws_iam_role_policy" "ecs_task_s3" {
           "s3:GetObject",
           "s3:DeleteObject"
         ]
-        Resource = "arn:aws:s3:::${var.env}-input-bucket-${var.account_id}/*"
+        Resource = [
+          "arn:aws:s3:::${var.env}-input-bucket-${var.account_id}/*",
+          "arn:aws:s3:::${var.env}-textract-${var.account_id}/*"
+        ]
       }
     ]
   })
@@ -472,4 +475,66 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_low" {
   tags = {
     Name = "${var.env}-ecs-cpu-low-alarm"
   }
+}
+
+# AI サービス権限
+resource "aws_iam_role_policy" "ecs_task_ai" {
+  name = "${var.env}-ecs-task-ai-policy"
+  role = aws_iam_role.ecs_task.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["bedrock:InvokeModel"]
+        Resource = ["arn:aws:bedrock:*::foundation-model/*", "arn:aws:bedrock:*:*:inference-profile/*"]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "transcribe:StartTranscriptionJob",
+          "transcribe:GetTranscriptionJob"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "translate:TranslateText",
+          "comprehend:DetectDominantLanguage"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "comprehend:DetectSentiment",
+          "comprehend:DetectEntities",
+          "comprehend:DetectKeyPhrases"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "textract:DetectDocumentText",
+          "textract:AnalyzeDocument"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["rekognition:DetectFaces"]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "macie2:CreateClassificationJob",
+          "macie2:GetFindings"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
