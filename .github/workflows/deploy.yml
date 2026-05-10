@@ -12,6 +12,7 @@ env:
   ECS_SERVICE: dev-web-service
   CONTAINER_NAME: web
   S3_BUCKET: dev-frontend-227811178732
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   deploy-backend:
@@ -147,4 +148,24 @@ jobs:
       - name: Deploy to S3
         working-directory: frontend
         run: |
-          aws s3 sync dist/ s3://${{ env.S3_BUCKET }} --delete
+          # アセット（JS・CSS）は長期キャッシュ
+          aws s3 sync dist/assets/ s3://${{ env.S3_BUCKET }}/assets/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+          # index.htmlはキャッシュなし
+          aws s3 cp dist/index.html s3://${{ env.S3_BUCKET }}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+          # その他のファイル
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --exclude "assets/*" \
+            --exclude "index.html"
+
+      - name: CloudFrontキャッシュクリア
+        run: |
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='dev-cloudfront'].Id" \
+            --output text)
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"

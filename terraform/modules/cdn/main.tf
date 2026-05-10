@@ -134,16 +134,14 @@ resource "aws_cloudfront_distribution" "main" {
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "S3"
     viewer_protocol_policy = "redirect-to-https"
-
     forwarded_values {
       query_string = false
       cookies {
         forward = "none"
       }
     }
-
     min_ttl     = 0
-    default_ttl = 86400
+    default_ttl = 0      # ← 86400から0に変更
     max_ttl     = 31536000
   }
 
