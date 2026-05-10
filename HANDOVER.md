@@ -1,7 +1,8 @@
 # KazuAI Platform 引き継ぎ書
-## Phase N+1 更新版（2026年5月9日更新）
+## Phase N+2 更新版（2026年5月10日更新）
 
-## ⚠️ 絶対ルール
+⚠️ 絶対ルール
+
 - AWSリソースの変更は全部Terraformから！手動CLIでの変更は絶対NG
 - 機密情報はSecretsManagerで管理！GitHubへの露出は絶対NG
 - 全作業はWSLで統一！PowerShellとの混在はNG
@@ -12,19 +13,19 @@
 - アプリコード変更 → git pushのみ
 
 ## 1. 現在の状態
+
 | コンポーネント | 状態 | 備考 |
 |---|---|---|
 | インフラ（Terraform） | ✅ 完了 | 全手動作業を自動化済み |
 | バックエンド（FastAPI） | ✅ 動作確認済み | ECS Fargate・/api/healthで確認済み |
 | CI/CD（GitHub Actions） | ✅ 完了 | OIDC認証・アクセスキー不要 |
-| SecretsManager連携 | ✅ 完了 | RDS Proxy用とアプリ用に分離 |
+| SecretsManager連携 | ✅ 完了 | Terraform完全管理・手動CLI変更なし |
 | フロントエンド（React/Vite） | ✅ 完了 | CloudFront経由でHTTPS配信 |
-| CloudFront | ✅ 完了 | Authorizationヘッダー転送設定済み |
-| RDS Proxy | ✅ 完了 | caching_sha2_passwordで統一 |
-| WAF | ✅ 完了 | SQLi・一般攻撃対策・SizeRestrictions_BODY除外済み |
-| IAM最小権限 | ✅ 完了 | OIDC認証に移行・アクセスキー廃止 |
-| WSL統一環境 | ✅ 完了 | 2026年5月6日に対応済み |
-| Lambda（画像処理） | ✅ 完了 | Rekognition・DynamoDB連携済み |
+| CloudFront | ✅ 完了 | SPA対応・カスタムエラーレスポンス・キャッシュ最適化 |
+| RDS Proxy | ✅ 完了 | Writer/Reader分離設計済み |
+| WAF | ✅ 完了 | SQLi・一般攻撃対策済み |
+| IAM最小権限 | ✅ 完了 | OIDC認証・ECR/ECS特定ARNに絞り込み済み |
+| Lambda（画像処理） | ✅ 完了 | boto3除外・__pycache__除外・ZIPサイズ削減済み |
 | CloudTrail専用バケット | ✅ 完了 | inputバケットから分離済み |
 | SGルール管理 | ✅ 完了 | egress競合修正済み |
 | DynamoDB APIエンドポイント | ✅ 完了 | GET /api/ai/image-analysis追加済み |
@@ -33,14 +34,23 @@
 | Alembicマイグレーション | ✅ 完了 | 専用ECSタスク・GitHub Actions自動化済み |
 | /api/ai/upload | ✅ 動作確認済み | CloudFront経由でファイルアップロード確認済み |
 | /api/ai/results | ✅ 動作確認済み | CloudFront経由でDB結果取得確認済み |
-| フロントエンドUI | ✅ 完了 | Rekognition結果ビジュアル表示（信頼度バー・顔検出） |
-| 動作確認スクリプト | ✅ 完了 | scripts/verify.sh（SecretsManager連携） |
+| フロントエンドUI | ✅ 完了 | 日本語化・モバイル対応・自動翻訳無効化済み |
+| ECS AutoScaling | ✅ 完了 | CPU70%スケールアウト・最小1・最大5タスク |
+| CloudWatch監視ダッシュボード | ✅ 完了 | ECS・RDS・Lambda・CloudFront・WAF・DynamoDB |
+| DB読み書き分離 | ✅ 完了 | Writer/Reader設計済み（現在は単一インスタンスのためWriter共用） |
+| S3・DynamoDB VPCエンドポイント | ✅ 完了 | ゲートウェイエンドポイント追加済み |
+| uvicornログレベル | ✅ 完了 | debugからinfoに変更済み |
+| Node.js | ✅ 完了 | 20から24にアップグレード済み |
+| KMSポリシー | ✅ 完了 | ECR・ECS特定ARNに絞り込み済み |
+| SecretsManager自動化 | ✅ 完了 | DATABASE_URL_WRITER/READERをTerraformで管理 |
+| CloudFrontキャッシュ自動クリア | ✅ 完了 | GitHub Actionsデプロイ後に自動実行 |
 | ECS AutoScaling | ⏳ 未着手 | 次のタスク |
-| CloudWatch監視ダッシュボード | ⏳ 未着手 | AutoScalingと一緒に実装 |
+| ALBのHTTPS化 | ⏳ 未着手 | ドメイン取得後 |
 
 ## 2. 重要な値
 
 ### 固定値（destroyしても変わらない）
+
 | 項目 | 値 |
 |---|---|
 | Lex Bot Alias ID | TSTALIASID |
@@ -61,14 +71,15 @@
 | テストユーザー | SecretsManagerから取得（dev-test-user-secret） |
 
 ### applyのたびに変わる値（terraform outputで取得）
+
 | 項目 | 確認コマンド |
 |---|---|
-| ALB DNS | `aws elbv2 describe-load-balancers --query "LoadBalancers[*].DNSName" --output text` |
-| Lex Bot ID | `terraform output lex_bot_id` |
-| CloudFront URL | `terraform output cloudfront_domain_name` |
-| GitHub Actions Role ARN | `terraform output github_actions_role_arn` |
-| Cognito User Pool ID | `terraform output cognito_user_pool_id` |
-| Cognito Client ID | `terraform output cognito_client_id` |
+| ALB DNS | aws elbv2 describe-load-balancers --query "LoadBalancers[*].DNSName" --output text |
+| Lex Bot ID | terraform output lex_bot_id |
+| CloudFront URL | terraform output cloudfront_domain_name |
+| GitHub Actions Role ARN | terraform output github_actions_role_arn |
+| Cognito User Pool ID | terraform output cognito_user_pool_id |
+| Cognito Client ID | terraform output cognito_client_id |
 
 ## 3. アーキテクチャ
 ユーザー → HTTPS → CloudFront（WAF付き）
@@ -99,52 +110,36 @@ git commit --allow-empty -m "ci: trigger deploy"
 git push origin main
 ```
 
-### Step 4: 動作確認（自動スクリプト）
+### Step 4: 動作確認
 ```bash
-~/kazu-aws-full-project/scripts/verify.sh
+curl -s https://$(terraform output -raw cloudfront_domain_name)/api/health
 ```
 
-## 5. 次にやること（最優先）
+⚠️ dev-test-user-secretがエラーになる場合：
+```bash
+aws secretsmanager delete-secret \
+  --secret-id dev-test-user-secret \
+  --force-delete-without-recovery
+terraform apply
+```
 
-### ECS AutoScaling + CloudWatch監視ダッシュボード（セットで実装）
-**実装場所：terraform/modules/container/main.tf と terraform/modules/monitoring/main.tf**
+## 5. 次にやること
 
-#### ECS AutoScaling実装手順
-1. container/main.tfに以下を追加：
-   - aws_appautoscaling_target（最小1・最大5タスク）
-   - aws_appautoscaling_policy（CPU 70%でスケールアウト・30%でスケールイン）
-
-#### CloudWatchダッシュボード強化
-monitoring/main.tfのダッシュボードにウィジェット追加：
-- ECS CPU・メモリ使用率
-- RDS CPU・接続数・レイテンシ
-- Lambda エラー・実行時間・実行回数
-- CloudFront キャッシュヒット率・リクエスト数
-- WAF ブロック数
-- DynamoDB 読み書きスロットリング
-- ALBリクエスト数・5XXエラー（既存）
-
-#### アラーム追加
-- ECS CPU 70%超え → SNS通知
-- ECS メモリ 80%超え → SNS通知
-- Lambda エラー5件超え → SNS通知（既存）
-- RDS接続数80超え → SNS通知（既存）
-
-## 6. やることリスト（技術的負債）
 | # | タスク | 内容 |
 |---|---|---|
-| 1 | ECS AutoScaling | CPU70%でスケールアウト・最小1・最大5タスク |
-| 2 | CloudWatch監視ダッシュボード | ECS・ALB・RDS・Lambda・CloudFront・WAF・DynamoDB |
-| 3 | Webページを綺麗にする | フロントエンドUIの改善・文字ズレ修正 |
+| 1 | README編集 | 自分の言葉で内容を書き直す・面接準備 |
+| 2 | 履歴書作成 | READMEをベースに最強の履歴書を作成 |
+| 3 | ALBのHTTPS化 | ACM証明書・ドメイン取得後 |
 | 4 | DBクエリ確認 | RDS・DynamoDBのデータをクエリして中身を確認 |
-| 5 | 読み書き分離 | DATABASE_URL_WRITERとDATABASE_URL_READERに分けてRDS Proxyを活用 |
-| 6 | IAMユーザーのMFA設定 | AWSコンソールへのMFAログイン設定 |
-| 7 | Node.jsの警告修正 | GitHub ActionsのNode.js 20→24への対応 |
-| 8 | ALBのHTTPS化 | ACM証明書を設定してHTTPSに対応（ドメイン取得後） |
-| 9 | KMSポリシーの絞り込み | 現在Resource:*になっているKMSのIAM権限を特定ARNに絞る |
-| 10 | RDSパスワード強化 | 強いパスワードに変更してSecretsManagerで管理 |
-| 11 | boto3をLambdaから除外 | Lambda実行環境にboto3が含まれているためZIPサイズ削減可能 |
-| 12 | uvicornログレベル戻す | app/DockerfileのログレベルをdebugからINFOに戻す |
+| 5 | Athena実装 | ログ分析基盤（任意） |
+
+## 6. やることリスト（技術的負債）
+
+| # | タスク | 内容 |
+|---|---|---|
+| 1 | RDSパスワード強化 | 強いパスワードに変更してSecretsManagerで管理 |
+| 2 | ALBのHTTPS化 | ACM証明書を設定してHTTPSに対応（ドメイン取得後） |
+| 3 | Aurora Readerインスタンス追加 | 完全な読み書き分離を実現（本番環境向け） |
 
 ## 7. Terraformモジュール構成
 terraform/modules/
@@ -156,6 +151,7 @@ auth/        messaging/ governance/ cache/   batch/
 networking → database → security → compute → container
 
 ## 8. SGルール管理
+
 ⚠️ egressブロックとaws_security_group_ruleを混在させない！
 
 | ルール | 管理場所 |
@@ -165,13 +161,22 @@ networking → database → security → compute → container
 | ECS → Aurora直接（3306）※マイグレーション用 | database/main.tf |
 
 ## 9. SecretsManager構成
+
 | Secret名 | 用途 | KMS暗号化 |
 |---|---|---|
 | dev-db-secret-proxy | RDS ProxyがAuroraに接続 | なし |
-| dev-app-secret | アプリがRDS Proxyに接続 | あり |
-| dev-test-user-secret | テストユーザー情報（username/password） | あり |
+| dev-app-secret | DATABASE_URL_WRITER/READER | あり |
+| dev-test-user-secret | テストユーザー情報 | あり |
 
-## 10. Lambda（画像処理）構成
+## 10. DB読み書き分離
+
+- **Writer**: dev-rds-proxy.proxy-xxx.ap-northeast-1.rds.amazonaws.com
+- **Reader**: dev-rds-proxy-reader.endpoint.proxy-xxx.ap-northeast-1.rds.amazonaws.com
+- 現在は単一インスタンスのためWriterで両方処理
+- 本番環境ではReaderインスタンスを追加して完全分離
+
+## 11. Lambda（画像処理）構成
+
 | 項目 | 値 |
 |---|---|
 | 関数名 | dev-image-resize |
@@ -180,28 +185,32 @@ networking → database → security → compute → container
 | タイムアウト | 60秒 |
 | トリガー | S3（images/プレフィックスのみ） |
 
-### ZIPの再作成方法
+### ZIPの再作成方法（boto3除外・__pycache__除外）
 ```bash
 mkdir -p ~/lambda_build/package && cd ~/lambda_build
-pip install pillow boto3 \
+pip install pillow \
   --target ./package \
   --platform manylinux2014_x86_64 \
   --python-version 3.11 \
   --only-binary=:all: \
   --break-system-packages
+find ./package -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null
 cp ~/kazu-aws-full-project/package/lambda_function.py ~/lambda_build/package/
 cd ~/lambda_build/package
 zip -r ~/kazu-aws-full-project/package/lambda_function.zip .
 ```
 
-## 11. GitHub Actions（deploy.yml）フロー
-git push → ECRにイメージビルド・プッシュ
-        → マイグレーション専用ECSタスク起動（Aurora直接接続）
-        → タスク完了待機・成功確認
-        → ECSサービスデプロイ（RDS Proxy経由）
-        → フロントエンドビルド・S3デプロイ
+## 12. GitHub Actions（deploy.yml）フロー
+git push
+→ ECRにイメージビルド・プッシュ
+→ マイグレーション専用ECSタスク起動（Aurora直接接続）
+→ タスク完了待機・成功確認
+→ ECSサービスデプロイ（RDS Proxy経由）
+→ フロントエンドビルド・S3デプロイ（キャッシュ制御付き）
+→ CloudFrontキャッシュ自動クリア
 
-## 12. destroy前の手順
+## 13. destroy前の手順
+
 ```bash
 # ECR削除
 aws ecr batch-delete-image --repository-name dev-web-app \
@@ -231,21 +240,31 @@ cd ~/kazu-aws-full-project/terraform/environments/dev
 terraform destroy
 ```
 
-## 13. トラブルシューティング
+## 14. トラブルシューティング
+
 | エラー | 原因 | 対処 |
 |---|---|---|
-| 503 Service Unavailable | ECSタスクが落ちている | `aws ecs describe-services`でイベント確認 |
-| Waiting for application startup（ハング） | main.pyにAlembicが残っている | create_all()に戻してpush |
+| 503 Service Unavailable | ECSタスクが落ちている | aws ecs describe-servicesでイベント確認 |
 | KMS key access denied | ECSタスクロールにKMS権限がない | container/main.tfのecs_task_kmsを確認 |
-| Invalid bucket name "" | S3_BUCKET_NAME環境変数がない | container/main.tfのenvironmentを確認 |
-| RequestTimeTooSkewed | WSLの時刻ズレ | `sudo ntpdate pool.ntp.org` |
-| Error acquiring the state lock | terraform操作が中断 | DynamoDBのロックを削除 |
-| ECR Repository already exists | tfstateが空でECRが残っている | `terraform import module.container.aws_ecr_repository.main dev-web-app` |
+| RequestTimeTooSkewed | WSLの時刻ズレ | sudo ntpdate pool.ntp.org |
+| ECR Repository already exists | tfstateが空でECRが残っている | terraform import module.container.aws_ecr_repository.main dev-web-app |
 | AUTH_FAILURE | RDS ProxyがSecretsManagerにアクセスできない | database/main.tfのrds_proxy_secrets_policyを確認 |
 | 403 CloudFront（ファイルアップロード） | WAFのSizeRestrictions_BODYがブロック | cdn/main.tfでrule_action_overrideを確認 |
 | Not authenticated（CloudFront経由） | AuthorizationヘッダーがCloudFrontで転送されていない | cdn/main.tfのforwarded_valuesにAuthorizationを追加 |
-| User pool client does not exist | Cognito Client IDが古い | `terraform output cognito_client_id`で最新値確認 |
-| InvalidImageFormatException | 画像フォーマット問題 | `convert -strip`でExif除去してリトライ |
+| User pool client does not exist | Cognito Client IDが古い | terraform output cognito_client_idで最新値確認 |
+| dev-test-user-secret作成エラー | 削除待ち状態 | aws secretsmanager delete-secret --secret-id dev-test-user-secret --force-delete-without-recovery |
+| ログイン後に黒画面 | ブラウザの自動翻訳がReactのDOMと競合 | index.htmlにtranslate="no"・notranslateを追加済み |
+| Target group doesn't have read-only instances | Aurora単一インスタンスでReaderエンドポイントが使えない | database.pyでDATABASE_URL_WRITERにフォールバック済み |
+
+## 15. 次の会話の始め方
+
+新しい会話を始める時は以下をAIに伝えてください：
 
 ---
-作成日：2026年5月6日／最終更新：2026年5月9日
+GitHubの以下のファイルを読んでから作業を始めてください：
+https://github.com/o-kazuo/kazu-aws-full-project/blob/main/HANDOVER.md
+
+このファイルがKazuAI Platformプロジェクトの引き継ぎ書です。
+内容を把握した上で作業を続けてください。
+---
+
