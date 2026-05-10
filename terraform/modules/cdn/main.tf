@@ -72,6 +72,21 @@ resource "aws_cloudfront_distribution" "main" {
   default_root_object = "index.html"
   web_acl_id          = aws_wafv2_web_acl.main.arn
 
+# SPAのルーティング対応・エラーページ設定
+  custom_error_response {
+    error_code            = 403
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 0
+  }
+
+  custom_error_response {
+    error_code            = 404
+    response_code         = 200
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 0
+  }
+
   # ALBオリジン（バックエンドAPI）
   origin {
     domain_name = var.alb_dns_name
