@@ -115,7 +115,7 @@ def transcribe(
     try:
         upload_file_to_s3(file.file.read(), s3_key, file.content_type)
         start = time.time()
-        result = transcribe_audio(s3_key, language_code)
+        result = transcribe_audio(f"s3://dev-input-bucket-227811178732/{s3_key}", language_code)
         processing_time = round(time.time() - start, 2)
         new_count = finalize(ai_result, result, processing_time, db, current_user["sub"], "transcribe")
 
