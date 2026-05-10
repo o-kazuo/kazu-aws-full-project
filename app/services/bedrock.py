@@ -8,7 +8,7 @@ REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
 bedrock_client = boto3.client("bedrock-runtime", region_name=REGION)
 
 # 使用するモデル（Claude 3 Haiku — コスト最小・高速）
-MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+MODEL_ID = "anthropic.claude-3-haiku-20250307-v1:0"
 
 def generate_text(prompt: str, max_tokens: int = 1000, system_prompt: str = None) -> dict:
     """
