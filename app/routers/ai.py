@@ -149,7 +149,7 @@ def translate(
 
     try:
         start = time.time()
-        result = translate_text(text, target_language, source_language)
+        result = translate_text(text, source_language, target_language)
         processing_time = round(time.time() - start, 2)
         new_count = finalize(ai_result, result, processing_time, db, current_user["sub"], "translate")
 
