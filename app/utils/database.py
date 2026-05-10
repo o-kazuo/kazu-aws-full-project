@@ -14,12 +14,20 @@ SSL_ARGS = {
     }
 }
 
+POOL_KWARGS = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+    "pool_timeout": 30,
+    "pool_size": 5,
+    "max_overflow": 10,
+}
+
 # Writer（書き込み用）
 DATABASE_URL_WRITER = _build_url(
     "DATABASE_URL_WRITER",
     os.getenv("DATABASE_URL", "mysql://admin:password@localhost:3306/kazudb")
 )
-engine_writer = create_engine(DATABASE_URL_WRITER, connect_args=SSL_ARGS)
+engine_writer = create_engine(DATABASE_URL_WRITER, connect_args=SSL_ARGS, **POOL_KWARGS)
 SessionWriter = sessionmaker(autocommit=False, autoflush=False, bind=engine_writer)
 
 # Reader（読み込み用）- Aurora Serverless v2単一インスタンスのためWriterを使用
@@ -27,7 +35,7 @@ DATABASE_URL_READER = _build_url(
     "DATABASE_URL_WRITER",
     os.getenv("DATABASE_URL", "mysql://admin:password@localhost:3306/kazudb")
 )
-engine_reader = create_engine(DATABASE_URL_READER, connect_args=SSL_ARGS)
+engine_reader = create_engine(DATABASE_URL_READER, connect_args=SSL_ARGS, **POOL_KWARGS)
 SessionReader = sessionmaker(autocommit=False, autoflush=False, bind=engine_reader)
 
 # マイグレーション用
