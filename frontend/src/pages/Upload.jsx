@@ -10,6 +10,69 @@ const SERVICES = [
   { id: "bedrock", label: "🤖 生成AI", desc: "Claude 3 Haikuでテキスト生成", type: "text" },
 ];
 
+const LABEL_JA = {
+  Vegetation: "植生", Nature: "自然", Outdoors: "屋外", Scenery: "景色",
+  Jungle: "ジャングル", Land: "土地", Woodland: "森林", Rainforest: "熱帯雨林",
+  Road: "道路", Green: "緑", Sky: "空", Cloud: "雲", Mountain: "山",
+  River: "川", Lake: "湖", Ocean: "海", Beach: "ビーチ", Forest: "森",
+  Tree: "木", Grass: "草", Flower: "花", Plant: "植物", Water: "水",
+  Animal: "動物", Dog: "犬", Cat: "猫", Bird: "鳥", Fish: "魚",
+  Person: "人物", Face: "顔", Man: "男性", Woman: "女性", Child: "子供",
+  Crowd: "群衆", Clothing: "衣服", Building: "建物", Architecture: "建築",
+  City: "都市", Urban: "市街地", House: "家", Office: "オフィス",
+  Room: "部屋", Interior: "内装", Food: "食べ物", Fruit: "果物",
+  Vegetable: "野菜", Meal: "食事", Car: "車", Vehicle: "乗り物",
+  Truck: "トラック", Bus: "バス", Bicycle: "自転車", Motorcycle: "バイク",
+  Airplane: "飛行機", Boat: "ボート", Electronics: "電子機器",
+  Computer: "コンピュータ", Phone: "電話", Furniture: "家具",
+  Table: "テーブル", Chair: "椅子", Sport: "スポーツ", Ball: "ボール",
+  Night: "夜", Day: "昼", Sunset: "夕焼け", Sunrise: "日の出",
+  Light: "光", Shadow: "影", Snow: "雪", Rain: "雨", Fire: "火",
+  Smoke: "煙", Fog: "霧", Desert: "砂漠", Rock: "岩", Stone: "石",
+  Sand: "砂", Soil: "土", Leaf: "葉", Branch: "枝", Root: "根",
+  Sunset: "夕焼け", Sunrise: "日の出", Rainbow: "虹", Storm: "嵐",
+  Waterfall: "滝", Valley: "谷", Hill: "丘", Field: "畑・野原",
+  Farm: "農場", Garden: "庭園", Park: "公園", Bridge: "橋",
+  Tower: "塔", Castle: "城", Church: "教会", Temple: "寺院",
+  Market: "市場", Shop: "店", Restaurant: "レストラン", Hotel: "ホテル",
+  Hospital: "病院", School: "学校", Library: "図書館", Museum: "博物館",
+  Stadium: "スタジアム", Airport: "空港", Station: "駅", Harbor: "港",
+  Swimming: "水泳", Running: "ランニング", Cycling: "サイクリング",
+  Hiking: "ハイキング", Camping: "キャンプ", Fishing: "釣り",
+  Cooking: "料理", Eating: "食事", Drinking: "飲む", Reading: "読書",
+  Writing: "書く", Drawing: "描く", Painting: "絵画", Music: "音楽",
+  Dance: "ダンス", Performance: "パフォーマンス", Concert: "コンサート",
+  Wedding: "結婚式", Party: "パーティー", Celebration: "お祝い",
+  Sunrise: "日の出", Sunset: "夕焼け", Twilight: "薄明かり",
+};
+
+const CATEGORY_JA = {
+  "Nature and Outdoors": "自然・屋外",
+  "Transport and Logistics": "交通・物流",
+  "Colors and Visual Composition": "色・構図",
+  "Animals and Pets": "動物・ペット",
+  "People and Portraits": "人物・ポートレート",
+  "Food and Drink": "食べ物・飲み物",
+  "Architecture and Buildings": "建築・建物",
+  "Electronics and Technology": "電子機器・テクノロジー",
+  "Sports and Recreation": "スポーツ・レクリエーション",
+  "Furniture and Household": "家具・家庭用品",
+  "Urban and Street": "都市・街",
+  "Fashion and Apparel": "ファッション・衣服",
+  "Art and Entertainment": "アート・エンターテインメント",
+  "Travel and Adventure": "旅行・冒険",
+  "Science and Technology": "科学・テクノロジー",
+  "Health and Medical": "健康・医療",
+  "Education": "教育",
+  "Business and Finance": "ビジネス・金融",
+};
+
+const EMOTION_JA = {
+  HAPPY: "😊 幸福", SAD: "😢 悲しみ", ANGRY: "😠 怒り",
+  CONFUSED: "😕 困惑", DISGUSTED: "🤢 嫌悪", SURPRISED: "😲 驚き",
+  CALM: "😌 穏やか", FEAR: "😨 恐怖",
+};
+
 export default function Upload() {
   const [selectedService, setSelectedService] = useState("rekognition");
   const [file, setFile] = useState(null);
@@ -282,7 +345,9 @@ export default function Upload() {
                   {result.result.map((label, i) => (
                     <div key={i} style={{ marginBottom: "12px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "14px", fontWeight: "600" }}>{label.Name}</span>
+                        <span style={{ fontSize: "14px", fontWeight: "600" }}>
+                          {LABEL_JA[label.Name] || label.Name}
+                        </span>
                         <span style={{ fontSize: "13px", color: "#666" }}>
                           {label.Confidence.toFixed(1)}%
                         </span>
@@ -298,7 +363,7 @@ export default function Upload() {
                       </div>
                       {label.Categories?.length > 0 && (
                         <span style={{ fontSize: "11px", color: "#999", marginTop: "2px", display: "block" }}>
-                          カテゴリ: {label.Categories.map(c => c.Name).join(", ")}
+                          カテゴリ: {label.Categories.map(c => CATEGORY_JA[c.Name] || c.Name).join(", ")}
                         </span>
                       )}
                     </div>
@@ -328,7 +393,7 @@ export default function Upload() {
                         fontSize: "13px",
                         color: "#444"
                       }}>
-                        <div>😊 感情: {face.Emotions?.[0]?.Type} ({face.Emotions?.[0]?.Confidence.toFixed(1)}%)</div>
+                        <div>{EMOTION_JA[face.Emotions?.[0]?.Type] || face.Emotions?.[0]?.Type} ({face.Emotions?.[0]?.Confidence.toFixed(1)}%)</div>
                         <div>🎂 推定年齢: {face.AgeRange?.Low}〜{face.AgeRange?.High}歳</div>
                         <div>👤 性別: {face.Gender?.Value === "Male" ? "男性" : "女性"} ({face.Gender?.Confidence.toFixed(1)}%)</div>
                         <div>😎 サングラス: {face.Sunglasses?.Value ? "あり" : "なし"}</div>
