@@ -421,8 +421,23 @@ export default function Upload() {
                 </div>
               )}
 
+              {/* Translate */}
+              {selectedService === "translate" && (
+                <div style={{ background: "white", borderRadius: "8px", padding: "16px", border: "1px solid #e0e7ff", fontSize: "14px", lineHeight: "1.8", color: "#1a1a2e" }}>
+                  <p style={{ fontSize: "12px", color: "#999", marginBottom: "8px" }}>{result.result?.SourceLanguageCode} → {result.result?.TargetLanguageCode}</p>
+                  <p>{result.result?.TranslatedText}</p>
+                </div>
+              )}
+
+              {/* Transcribe */}
+              {selectedService === "transcribe" && (
+                <div style={{ background: "white", borderRadius: "8px", padding: "16px", border: "1px solid #e0e7ff", fontSize: "14px", lineHeight: "1.8", whiteSpace: "pre-wrap", color: "#1a1a2e" }}>
+                  {result.result || "（音声が検出されませんでした）"}
+                </div>
+              )}
+
               {/* その他サービスはJSON表示 */}
-              {selectedService !== "rekognition" && selectedService !== "bedrock" && (
+              {selectedService !== "rekognition" && selectedService !== "bedrock" && selectedService !== "translate" && selectedService !== "transcribe" && (
                 <pre style={{
                   background: "#1a1a2e",
                   color: "#e2e8f0",
