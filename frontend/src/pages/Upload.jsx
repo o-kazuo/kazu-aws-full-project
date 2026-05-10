@@ -436,8 +436,38 @@ export default function Upload() {
                 </div>
               )}
 
+              {/* Comprehend */}
+              {selectedService === "comprehend" && (
+                <div style={{ background: "white", borderRadius: "8px", padding: "16px", border: "1px solid #e0e7ff" }}>
+                  <p style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px", color: "#555" }}>感情分析</p>
+                  <p style={{ fontSize: "14px", marginBottom: "8px" }}>
+                    感情: <strong>{result.result?.sentiment === "POSITIVE" ? "😊 ポジティブ" : result.result?.sentiment === "NEGATIVE" ? "😢 ネガティブ" : result.result?.sentiment === "NEUTRAL" ? "😐 ニュートラル" : "😕 混在"}</strong>
+                  </p>
+                  {result.result?.entities?.length > 0 && (
+                    <div>
+                      <p style={{ fontSize: "13px", fontWeight: "700", marginBottom: "8px", color: "#555" }}>検出されたエンティティ</p>
+                      {result.result.entities.map((e, i) => (
+                        <span key={i} style={{ display: "inline-block", background: "#e0e7ff", borderRadius: "4px", padding: "2px 8px", marginRight: "6px", marginBottom: "6px", fontSize: "13px" }}>
+                          {e.Text}（{e.Type}）
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Textract */}
+              {selectedService === "textract" && (
+                <div style={{ background: "white", borderRadius: "8px", padding: "16px", border: "1px solid #e0e7ff" }}>
+                  <p style={{ fontSize: "13px", fontWeight: "700", marginBottom: "8px", color: "#555" }}>抽出テキスト（{result.result?.line_count}行）</p>
+                  <pre style={{ fontSize: "14px", lineHeight: "1.8", whiteSpace: "pre-wrap", color: "#1a1a2e", margin: 0 }}>
+                    {result.result?.text || "（テキストが検出されませんでした）"}
+                  </pre>
+                </div>
+              )}
+
               {/* その他サービスはJSON表示 */}
-              {selectedService !== "rekognition" && selectedService !== "bedrock" && selectedService !== "translate" && selectedService !== "transcribe" && (
+              {selectedService !== "rekognition" && selectedService !== "bedrock" && selectedService !== "translate" && selectedService !== "transcribe" && selectedService !== "comprehend" && selectedService !== "textract" && (
                 <pre style={{
                   background: "#1a1a2e",
                   color: "#e2e8f0",
