@@ -1,7 +1,8 @@
 # KazuAI Platform
 
-AWS上に構築した、認証付きAIサービス統合プラットフォームです。
-Bedrock・Rekognition・Transcribe・Translate・Comprehend・Textractなど7つのAIサービスをReact+FastAPIで統合し、Terraform・GitHub ActionsによるIaC・CI/CD完全自動化を実現しています。
+AIは今後さらに伸びると考えていて、実際にWebアプリにAIを組み込んだ構成を自分で作って理解したいと思ったのがきっかけです。
+バックエンドはAIと相性のいいPythonを使いたかったので、FastAPIを選びました。フロントエンドは世界で一番普及しているReactを選んでいます。
+インフラはAWSのマネージドサービスをフル活用し、TerraformでIaC管理・GitHub ActionsでCI/CDまで自動化しています。
 
 ---
 
