@@ -1,8 +1,7 @@
 # KazuAI Platform 引き継ぎ書
-## Phase N+2 更新版（2026年5月10日更新）
+## Phase N+3 更新版（2026年5月11日更新）
 
-⚠️ 絶対ルール
-
+## ⚠️ 絶対ルール
 - AWSリソースの変更は全部Terraformから！手動CLIでの変更は絶対NG
 - 機密情報はSecretsManagerで管理！GitHubへの露出は絶対NG
 - 全作業はWSLで統一！PowerShellとの混在はNG
@@ -13,7 +12,6 @@
 - アプリコード変更 → git pushのみ
 
 ## 1. 現在の状態
-
 | コンポーネント | 状態 | 備考 |
 |---|---|---|
 | インフラ（Terraform） | ✅ 完了 | 全手動作業を自動化済み |
@@ -21,19 +19,16 @@
 | CI/CD（GitHub Actions） | ✅ 完了 | OIDC認証・アクセスキー不要 |
 | SecretsManager連携 | ✅ 完了 | Terraform完全管理・手動CLI変更なし |
 | フロントエンド（React/Vite） | ✅ 完了 | CloudFront経由でHTTPS配信 |
-| CloudFront | ✅ 完了 | SPA対応・カスタムエラーレスポンス・キャッシュ最適化 |
+| CloudFront | ✅ 完了 | SPA対応・カスタムエラーレスポンス・キャッシュ最適化・自動クリア |
 | RDS Proxy | ✅ 完了 | Writer/Reader分離設計済み |
 | WAF | ✅ 完了 | SQLi・一般攻撃対策済み |
 | IAM最小権限 | ✅ 完了 | OIDC認証・ECR/ECS特定ARNに絞り込み済み |
 | Lambda（画像処理） | ✅ 完了 | boto3除外・__pycache__除外・ZIPサイズ削減済み |
 | CloudTrail専用バケット | ✅ 完了 | inputバケットから分離済み |
 | SGルール管理 | ✅ 完了 | egress競合修正済み |
-| DynamoDB APIエンドポイント | ✅ 完了 | GET /api/ai/image-analysis追加済み |
 | ECSタスクロール権限 | ✅ 完了 | S3・Rekognition・Cognito・DynamoDB・KMS権限追加済み |
 | Cognito認証 | ✅ 動作確認済み | terraform output・SecretsManagerで自動化済み |
 | Alembicマイグレーション | ✅ 完了 | 専用ECSタスク・GitHub Actions自動化済み |
-| /api/ai/upload | ✅ 動作確認済み | CloudFront経由でファイルアップロード確認済み |
-| /api/ai/results | ✅ 動作確認済み | CloudFront経由でDB結果取得確認済み |
 | フロントエンドUI | ✅ 完了 | 日本語化・モバイル対応・自動翻訳無効化済み |
 | ECS AutoScaling | ✅ 完了 | CPU70%スケールアウト・最小1・最大5タスク |
 | CloudWatch監視ダッシュボード | ✅ 完了 | ECS・RDS・Lambda・CloudFront・WAF・DynamoDB |
@@ -44,13 +39,15 @@
 | KMSポリシー | ✅ 完了 | ECR・ECS特定ARNに絞り込み済み |
 | SecretsManager自動化 | ✅ 完了 | DATABASE_URL_WRITER/READERをTerraformで管理 |
 | CloudFrontキャッシュ自動クリア | ✅ 完了 | GitHub Actionsデプロイ後に自動実行 |
-| ECS AutoScaling | ⏳ 未着手 | 次のタスク |
+| Rekognition結果日本語化 | ✅ 完了 | ラベル・カテゴリ・感情を日本語表示 |
+| package/をgitignore | ✅ 完了 | Pillowバイナリ等をGit管理外に除外済み |
 | ALBのHTTPS化 | ⏳ 未着手 | ドメイン取得後 |
+| Aurora Readerインスタンス追加 | ⏳ 未着手 | 本番環境向け |
+| Athena実装 | ⏳ 未着手 | ログ分析基盤 |
 
 ## 2. 重要な値
 
 ### 固定値（destroyしても変わらない）
-
 | 項目 | 値 |
 |---|---|
 | Lex Bot Alias ID | TSTALIASID |
@@ -70,8 +67,18 @@
 | DynamoDB（画像分析） | dev-image-analysis |
 | テストユーザー | SecretsManagerから取得（dev-test-user-secret） |
 
-### applyのたびに変わる値（terraform outputで取得）
+### 最新のapply結果（2026年5月11日）
+| 項目 | 値 |
+|---|---|
+| CloudFront URL | https://d17rrnwdky6x3p.cloudfront.net |
+| Cognito User Pool ID | ap-northeast-1_HWbBdR8UD |
+| Cognito Client ID | 7co60gvo24t7s5gkncufplmf2u |
+| GitHub Actions Role ARN | arn:aws:iam::227811178732:role/dev-github-actions-role |
+| Lex Bot ID | V0UVZGTKOB |
+| Batch Job Definition | dev-batch-job |
+| Batch Job Queue | dev-batch-queue |
 
+### applyのたびに変わる値（terraform outputで取得）
 | 項目 | 確認コマンド |
 |---|---|
 | ALB DNS | aws elbv2 describe-load-balancers --query "LoadBalancers[*].DNSName" --output text |
@@ -91,55 +98,43 @@
 ## 4. インフラ再構築手順（destroy後の復元）
 
 ### Step 1: 時刻同期
-```bash
 sudo ntpdate pool.ntp.org
-```
 
 ### Step 2: Terraform apply
-```bash
 cd ~/kazu-aws-full-project/terraform/environments/dev
 terraform init -reconfigure
 terraform plan
 terraform apply
-```
 
 ### Step 3: デプロイ
-```bash
 cd ~/kazu-aws-full-project
-git commit --allow-empty -m "ci: trigger deploy"
+git add HANDOVER.md
+git commit -m "docs: 引き継ぎ書更新"
 git push origin main
-```
 
 ### Step 4: 動作確認
-```bash
 curl -s https://$(terraform output -raw cloudfront_domain_name)/api/health
-```
+# {"status":"healthy","service":"KazuAI Platform"} が返れば成功
 
-⚠️ dev-test-user-secretがエラーになる場合：
-```bash
+### ⚠️ dev-test-user-secretがエラーになる場合
 aws secretsmanager delete-secret \
   --secret-id dev-test-user-secret \
   --force-delete-without-recovery
 terraform apply
-```
 
-## 5. 次にやること
-
+## 5. 次にやること（優先順）
 | # | タスク | 内容 |
 |---|---|---|
-| 1 | README編集 | 自分の言葉で内容を書き直す・面接準備 |
-| 2 | 履歴書作成 | READMEをベースに最強の履歴書を作成 |
+| 1 | README編集 | 自分の言葉で書き直す・なぜこの設計にしたか・困ったこと・工夫した点を追記 |
 | 3 | ALBのHTTPS化 | ACM証明書・ドメイン取得後 |
-| 4 | DBクエリ確認 | RDS・DynamoDBのデータをクエリして中身を確認 |
-| 5 | Athena実装 | ログ分析基盤（任意） |
+| 4 | Athena実装 | ログ分析基盤（任意） |
 
-## 6. やることリスト（技術的負債）
-
+## 6. 技術的負債
 | # | タスク | 内容 |
 |---|---|---|
 | 1 | RDSパスワード強化 | 強いパスワードに変更してSecretsManagerで管理 |
-| 2 | ALBのHTTPS化 | ACM証明書を設定してHTTPSに対応（ドメイン取得後） |
-| 3 | Aurora Readerインスタンス追加 | 完全な読み書き分離を実現（本番環境向け） |
+| 2 | ALBのHTTPS化 | ACM証明書・ドメイン取得後 |
+| 3 | Aurora Readerインスタンス追加 | 完全な読み書き分離（本番環境向け） |
 
 ## 7. Terraformモジュール構成
 terraform/modules/
@@ -147,13 +142,10 @@ networking/  database/  security/  compute/  serverless/
 monitoring/  backup/    cdn/       lex/      container/
 auth/        messaging/ governance/ cache/   batch/
 
-### モジュール依存関係
-networking → database → security → compute → container
+モジュール依存関係：networking → database → security → compute → container
 
 ## 8. SGルール管理
-
 ⚠️ egressブロックとaws_security_group_ruleを混在させない！
-
 | ルール | 管理場所 |
 |---|---|
 | ECS → RDS Proxy（3306） | container/main.tf |
@@ -161,22 +153,19 @@ networking → database → security → compute → container
 | ECS → Aurora直接（3306）※マイグレーション用 | database/main.tf |
 
 ## 9. SecretsManager構成
-
 | Secret名 | 用途 | KMS暗号化 |
 |---|---|---|
 | dev-db-secret-proxy | RDS ProxyがAuroraに接続 | なし |
-| dev-app-secret | DATABASE_URL_WRITER/READER | あり |
+| dev-app-secret | DATABASE_URL_WRITER/READER（Terraform管理） | あり |
 | dev-test-user-secret | テストユーザー情報 | あり |
 
 ## 10. DB読み書き分離
-
-- **Writer**: dev-rds-proxy.proxy-xxx.ap-northeast-1.rds.amazonaws.com
-- **Reader**: dev-rds-proxy-reader.endpoint.proxy-xxx.ap-northeast-1.rds.amazonaws.com
-- 現在は単一インスタンスのためWriterで両方処理
+- Writer: dev-rds-proxy.proxy-xxx.ap-northeast-1.rds.amazonaws.com
+- Reader: dev-rds-proxy-reader.endpoint.proxy-xxx.ap-northeast-1.rds.amazonaws.com
+- 現在は単一インスタンスのためWriterで両方処理（database.pyでフォールバック済み）
 - 本番環境ではReaderインスタンスを追加して完全分離
 
 ## 11. Lambda（画像処理）構成
-
 | 項目 | 値 |
 |---|---|
 | 関数名 | dev-image-resize |
@@ -185,8 +174,7 @@ networking → database → security → compute → container
 | タイムアウト | 60秒 |
 | トリガー | S3（images/プレフィックスのみ） |
 
-### ZIPの再作成方法（boto3除外・__pycache__除外）
-```bash
+ZIPの再作成方法（boto3除外・__pycache__除外）：
 mkdir -p ~/lambda_build/package && cd ~/lambda_build
 pip install pillow \
   --target ./package \
@@ -198,7 +186,6 @@ find ./package -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null
 cp ~/kazu-aws-full-project/package/lambda_function.py ~/lambda_build/package/
 cd ~/lambda_build/package
 zip -r ~/kazu-aws-full-project/package/lambda_function.zip .
-```
 
 ## 12. GitHub Actions（deploy.yml）フロー
 git push
@@ -210,8 +197,6 @@ git push
 → CloudFrontキャッシュ自動クリア
 
 ## 13. destroy前の手順
-
-```bash
 # ECR削除
 aws ecr batch-delete-image --repository-name dev-web-app \
   --image-ids "$(aws ecr list-images --repository-name dev-web-app --query 'imageIds' --output json)"
@@ -238,10 +223,8 @@ done
 # terraform destroy
 cd ~/kazu-aws-full-project/terraform/environments/dev
 terraform destroy
-```
 
 ## 14. トラブルシューティング
-
 | エラー | 原因 | 対処 |
 |---|---|---|
 | 503 Service Unavailable | ECSタスクが落ちている | aws ecs describe-servicesでイベント確認 |
@@ -250,21 +233,18 @@ terraform destroy
 | ECR Repository already exists | tfstateが空でECRが残っている | terraform import module.container.aws_ecr_repository.main dev-web-app |
 | AUTH_FAILURE | RDS ProxyがSecretsManagerにアクセスできない | database/main.tfのrds_proxy_secrets_policyを確認 |
 | 403 CloudFront（ファイルアップロード） | WAFのSizeRestrictions_BODYがブロック | cdn/main.tfでrule_action_overrideを確認 |
-| Not authenticated（CloudFront経由） | AuthorizationヘッダーがCloudFrontで転送されていない | cdn/main.tfのforwarded_valuesにAuthorizationを追加 |
 | User pool client does not exist | Cognito Client IDが古い | terraform output cognito_client_idで最新値確認 |
 | dev-test-user-secret作成エラー | 削除待ち状態 | aws secretsmanager delete-secret --secret-id dev-test-user-secret --force-delete-without-recovery |
 | ログイン後に黒画面 | ブラウザの自動翻訳がReactのDOMと競合 | index.htmlにtranslate="no"・notranslateを追加済み |
-| Target group doesn't have read-only instances | Aurora単一インスタンスでReaderエンドポイントが使えない | database.pyでDATABASE_URL_WRITERにフォールバック済み |
+| Target group doesn't have read-only instances | Aurora単一インスタンスでReaderが使えない | database.pyでDATABASE_URL_WRITERにフォールバック済み |
+| GitHub Actions OIDCエラー | destroyするとOIDCプロバイダーも消える | terraform applyで復元してからpush |
+| package/がgitに混入 | .gitignoreに未追加 | echo "package/" >> .gitignore && git rm -r --cached package/ |
 
 ## 15. 次の会話の始め方
+新しい会話を始める時はこう伝えてください：
 
-新しい会話を始める時は以下をAIに伝えてください：
-
----
-GitHubの以下のファイルを読んでから作業を始めてください：
+KazuAI Platformプロジェクトの続きをやりたいです。
+まずこの引き継ぎ書を読んでください：
 https://github.com/o-kazuo/kazu-aws-full-project/blob/main/HANDOVER.md
 
-このファイルがKazuAI Platformプロジェクトの引き継ぎ書です。
-内容を把握した上で作業を続けてください。
----
-
+現在の状態：インフラ稼働中（destroyしていない）
