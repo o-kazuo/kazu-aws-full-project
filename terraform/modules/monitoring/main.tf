@@ -1,3 +1,256 @@
+resource "aws_cloudwatch_dashboard" "main" {
+  dashboard_name = "${var.env}-dashboard"
+
+  dashboard_body = jsonencode({
+    widgets = [
+      # ── 既存 ──────────────────────────────
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          title   = "ALB Request Count"
+          region  = var.aws_region
+          metrics = [["AWS/ApplicationELB", "RequestCount"]]
+          period  = 300
+          stat    = "Sum"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          title   = "ALB 5XX Errors"
+          region  = var.aws_region
+          metrics = [["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count"]]
+          period  = 300
+          stat    = "Sum"
+        }
+      },
+
+      # ── ECS ──────────────────────────────
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 12
+        height = 6
+        properties = {
+          title  = "ECS CPU使用率"
+          region = var.aws_region
+          metrics = [[
+            "AWS/ECS", "CPUUtilization",
+            "ClusterName", "${var.env}-ecs-cluster",
+            "ServiceName", "${var.env}-web-service"
+          ]]
+          period = 60
+          stat   = "Average"
+          annotations = {
+            horizontal = [{ value = 70, label = "スケールアウト閾値", color = "#ff6961" }]
+          }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 6
+        width  = 12
+        height = 6
+        properties = {
+          title  = "ECS メモリ使用率"
+          region = var.aws_region
+          metrics = [[
+            "AWS/ECS", "MemoryUtilization",
+            "ClusterName", "${var.env}-ecs-cluster",
+            "ServiceName", "${var.env}-web-service"
+          ]]
+          period = 60
+          stat   = "Average"
+          annotations = {
+            horizontal = [{ value = 80, label = "警告閾値", color = "#ff6961" }]
+          }
+        }
+      },
+
+      # ── RDS ──────────────────────────────
+      {
+        type   = "metric"
+        x      = 0
+        y      = 12
+        width  = 8
+        height = 6
+        properties = {
+          title  = "RDS CPU使用率"
+          region = var.aws_region
+          metrics = [["AWS/RDS", "CPUUtilization"]]
+          period = 300
+          stat   = "Average"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 8
+        y      = 12
+        width  = 8
+        height = 6
+        properties = {
+          title  = "RDS 接続数"
+          region = var.aws_region
+          metrics = [["AWS/RDS", "DatabaseConnections"]]
+          period = 300
+          stat   = "Average"
+          annotations = {
+            horizontal = [{ value = 80, label = "警告閾値", color = "#ff6961" }]
+          }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 16
+        y      = 12
+        width  = 8
+        height = 6
+        properties = {
+          title  = "RDS レイテンシ"
+          region = var.aws_region
+          metrics = [
+            ["AWS/RDS", "ReadLatency"],
+            ["AWS/RDS", "WriteLatency"]
+          ]
+          period = 300
+          stat   = "Average"
+        }
+      },
+
+      # ── Lambda ───────────────────────────
+      {
+        type   = "metric"
+        x      = 0
+        y      = 18
+        width  = 8
+        height = 6
+        properties = {
+          title  = "Lambda エラー数"
+          region = var.aws_region
+          metrics = [[
+            "AWS/Lambda", "Errors",
+            "FunctionName", "${var.env}-image-resize"
+          ]]
+          period = 60
+          stat   = "Sum"
+          annotations = {
+            horizontal = [{ value = 5, label = "アラーム閾値", color = "#ff6961" }]
+          }
+        }
+      },
+      {
+        type   = "metric"
+        x      = 8
+        y      = 18
+        width  = 8
+        height = 6
+        properties = {
+          title  = "Lambda 実行時間"
+          region = var.aws_region
+          metrics = [[
+            "AWS/Lambda", "Duration",
+            "FunctionName", "${var.env}-image-resize"
+          ]]
+          period = 60
+          stat   = "Average"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 16
+        y      = 18
+        width  = 8
+        height = 6
+        properties = {
+          title  = "Lambda 実行回数"
+          region = var.aws_region
+          metrics = [[
+            "AWS/Lambda", "Invocations",
+            "FunctionName", "${var.env}-image-resize"
+          ]]
+          period = 300
+          stat   = "Sum"
+        }
+      },
+
+      # ── CloudFront ────────────────────────
+      {
+        type   = "metric"
+        x      = 0
+        y      = 24
+        width  = 12
+        height = 6
+        properties = {
+          title  = "CloudFront キャッシュヒット率"
+          region = "us-east-1"
+          metrics = [["AWS/CloudFront", "CacheHitRate", "Region", "Global"]]
+          period = 300
+          stat   = "Average"
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 24
+        width  = 12
+        height = 6
+        properties = {
+          title  = "CloudFront リクエスト数"
+          region = "us-east-1"
+          metrics = [["AWS/CloudFront", "Requests", "Region", "Global"]]
+          period = 300
+          stat   = "Sum"
+        }
+      },
+
+      # ── WAF ──────────────────────────────
+      {
+        type   = "metric"
+        x      = 0
+        y      = 30
+        width  = 12
+        height = 6
+        properties = {
+          title  = "WAF ブロック数"
+          region = var.aws_region
+          metrics = [["AWS/WAFV2", "BlockedRequests"]]
+          period = 300
+          stat   = "Sum"
+        }
+      },
+
+      # ── DynamoDB ─────────────────────────
+      {
+        type   = "metric"
+        x      = 12
+        y      = 30
+        width  = 12
+        height = 6
+        properties = {
+          title  = "DynamoDB 読み書きスロットリング"
+          region = var.aws_region
+          metrics = [
+            ["AWS/DynamoDB", "ReadThrottleEvents",  "TableName", "${var.env}-image-analysis"],
+            ["AWS/DynamoDB", "WriteThrottleEvents", "TableName", "${var.env}-image-analysis"]
+          ]
+          period = 300
+          stat   = "Sum"
+        }
+      }
+    ]
+  })
+}
+
 # 予算アラート
 resource "aws_budgets_budget" "main" {
   name         = "${var.env}-monthly-budget"
@@ -15,41 +268,7 @@ resource "aws_budgets_budget" "main" {
   }
 }
 
-# CloudWatch ダッシュボード
-resource "aws_cloudwatch_dashboard" "main" {
-  dashboard_name = "${var.env}-dashboard"
-
-  dashboard_body = jsonencode({
-    widgets = [
-      {
-        type = "metric"
-        properties = {
-          title  = "ALB Request Count"
-          region = var.aws_region
-          metrics = [
-            ["AWS/ApplicationELB", "RequestCount"]
-          ]
-          period = 300
-          stat   = "Sum"
-        }
-      },
-      {
-        type = "metric"
-        properties = {
-          title  = "ALB 5XX Errors"
-          region = var.aws_region
-          metrics = [
-            ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count"]
-          ]
-          period = 300
-          stat   = "Sum"
-        }
-      }
-    ]
-  })
-}
-
-# CloudWatch アラーム（高CPU）
+# CloudWatch アラーム（高CPU）※EC2用・既存
 resource "aws_cloudwatch_metric_alarm" "high_cpu" {
   alarm_name          = "${var.env}-high-cpu"
   comparison_operator = "GreaterThanThreshold"
@@ -138,4 +357,46 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   tags = {
     Name = "${var.env}-lambda-errors-alarm"
   }
+}
+
+# ECS CPU 70%超え → SNS通知
+resource "aws_cloudwatch_metric_alarm" "ecs_cpu_sns" {
+  alarm_name          = "${var.env}-ecs-cpu-alert"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 70
+  alarm_description   = "ECS CPU使用率が70%を超えました"
+  alarm_actions       = [var.sns_topic_arn]
+
+  dimensions = {
+    ClusterName = "${var.env}-ecs-cluster"
+    ServiceName = "${var.env}-web-service"
+  }
+
+  tags = { Name = "${var.env}-ecs-cpu-alert" }
+}
+
+# ECS メモリ 80%超え → SNS通知
+resource "aws_cloudwatch_metric_alarm" "ecs_memory_sns" {
+  alarm_name          = "${var.env}-ecs-memory-alert"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "MemoryUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "ECS メモリ使用率が80%を超えました"
+  alarm_actions       = [var.sns_topic_arn]
+
+  dimensions = {
+    ClusterName = "${var.env}-ecs-cluster"
+    ServiceName = "${var.env}-web-service"
+  }
+
+  tags = { Name = "${var.env}-ecs-memory-alert" }
 }

@@ -200,3 +200,27 @@ resource "aws_route_table_association" "cache_1c" {
   subnet_id      = aws_subnet.cache_1c.id
   route_table_id = aws_route_table.private.id
 }
+
+# S3 ゲートウェイエンドポイント
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.private.id]
+
+  tags = {
+    Name = "${var.env}-s3-endpoint"
+  }
+}
+
+# DynamoDB ゲートウェイエンドポイント
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.dynamodb"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.private.id]
+
+  tags = {
+    Name = "${var.env}-dynamodb-endpoint"
+  }
+}

@@ -59,3 +59,4 @@ task-def.json
 
 # ビルド成果物
 lambda_build/package/
+package/

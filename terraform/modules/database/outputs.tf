@@ -58,3 +58,8 @@ output "rds_proxy_sg_id" {
   description = "RDS ProxyセキュリティグループID"
   value       = aws_security_group.rds_proxy.id
 }
+
+output "rds_proxy_reader_endpoint" {
+  description = "RDS Proxy Readerエンドポイント"
+  value       = aws_db_proxy_endpoint.reader.endpoint
+}

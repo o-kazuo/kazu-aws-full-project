@@ -51,15 +51,17 @@ module "database" {
 
 # セキュリティ層
 module "security" {
-  source        = "../../modules/security"
-  env           = var.env
-  db_username   = var.db_username
-  db_password   = var.db_password
-  vpc_id        = module.networking.vpc_id
-  db_endpoint   = module.database.rds_proxy_endpoint
-  db_name       = var.db_name
-  db_secret_arn = module.database.db_secret_arn
-  account_id    = var.account_id
+  source                    = "../../modules/security"
+  env                       = var.env
+  db_username               = var.db_username
+  db_password               = var.db_password
+  vpc_id                    = module.networking.vpc_id
+  db_endpoint               = module.database.rds_proxy_endpoint
+  db_name                   = var.db_name
+  db_secret_arn             = module.database.db_secret_arn
+  account_id                = var.account_id
+  rds_proxy_endpoint        = module.database.rds_proxy_endpoint
+  rds_proxy_reader_endpoint = module.database.rds_proxy_reader_endpoint
 }
 
 # コンピュート層

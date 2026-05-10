@@ -142,11 +142,15 @@ resource "aws_ecs_task_definition" "main" {
       { name = "COGNITO_CLIENT_ID",    value = var.cognito_client_id }
     ],
     secrets = [
-      {
-        name      = "DATABASE_URL"
-        valueFrom = "${var.db_secret_arn}:DATABASE_URL::"
-      }
-    ]
+  {
+    name      = "DATABASE_URL_WRITER"
+    valueFrom = "${var.db_secret_arn}:DATABASE_URL_WRITER::"
+  },
+  {
+    name      = "DATABASE_URL_READER"
+    valueFrom = "${var.db_secret_arn}:DATABASE_URL_READER::"
+  }
+]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -182,7 +186,7 @@ resource "aws_ecs_task_definition" "migration" {
     secrets = [
       {
         name      = "DATABASE_URL"
-        valueFrom = "${var.db_secret_arn}:DATABASE_URL::"
+        valueFrom = "${var.db_secret_arn}:DATABASE_URL_WRITER::"
       }
     ]
     logConfiguration = {
@@ -371,4 +375,101 @@ resource "aws_iam_role_policy" "ecs_task_cognito" {
       }
     ]
   })
+}
+
+# ─── ECS AutoScaling ───────────────────────────────────────────
+
+# AutoScalingターゲット（ECSサービスを対象に登録）
+resource "aws_appautoscaling_target" "ecs" {
+  max_capacity       = 5
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.main.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+# スケールアウトポリシー（CPU 70%超えでタスク追加）
+resource "aws_appautoscaling_policy" "ecs_scale_out" {
+  name               = "${var.env}-ecs-scale-out"
+  policy_type        = "StepScaling"
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = 60
+    metric_aggregation_type = "Average"
+
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment          = 1
+    }
+  }
+}
+
+# スケールインポリシー（CPU 30%以下でタスク削減）
+resource "aws_appautoscaling_policy" "ecs_scale_in" {
+  name               = "${var.env}-ecs-scale-in"
+  policy_type        = "StepScaling"
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = 300  # スケールインは余裕を持たせる
+    metric_aggregation_type = "Average"
+
+    step_adjustment {
+      metric_interval_upper_bound = 0
+      scaling_adjustment          = -1
+    }
+  }
+}
+
+# CPU高負荷アラーム → スケールアウトをトリガー
+resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
+  alarm_name          = "${var.env}-ecs-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 70
+  alarm_description   = "ECS CPU使用率が70%を超えました"
+  alarm_actions       = [aws_appautoscaling_policy.ecs_scale_out.arn]
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.main.name
+    ServiceName = aws_ecs_service.main.name
+  }
+
+  tags = {
+    Name = "${var.env}-ecs-cpu-high-alarm"
+  }
+}
+
+# CPU低負荷アラーム → スケールインをトリガー
+resource "aws_cloudwatch_metric_alarm" "ecs_cpu_low" {
+  alarm_name          = "${var.env}-ecs-cpu-low"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 3  # 誤検知防止で多めに
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 30
+  alarm_description   = "ECS CPU使用率が30%を下回りました"
+  alarm_actions       = [aws_appautoscaling_policy.ecs_scale_in.arn]
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.main.name
+    ServiceName = aws_ecs_service.main.name
+  }
+
+  tags = {
+    Name = "${var.env}-ecs-cpu-low-alarm"
+  }
 }

@@ -385,3 +385,16 @@ resource "aws_security_group_rule" "aurora_from_ecs" {
   security_group_id        = aws_security_group.db.id
   description              = "Aurora from ECS migration task"
 }
+
+# RDS Proxy Readerエンドポイント
+resource "aws_db_proxy_endpoint" "reader" {
+  db_proxy_name          = aws_db_proxy.main.name
+  db_proxy_endpoint_name = "${var.env}-rds-proxy-reader"
+  vpc_subnet_ids         = var.db_subnets
+  vpc_security_group_ids = [aws_security_group.rds_proxy.id]
+  target_role            = "READ_ONLY"
+
+  tags = {
+    Name = "${var.env}-rds-proxy-reader"
+  }
+}
