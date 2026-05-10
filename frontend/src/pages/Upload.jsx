@@ -420,7 +420,38 @@ export default function Upload() {
                 }}>
                   {JSON.stringify(result.result, null, 2)}
                 </pre>
+              {/* Bedrock生成AI */}
+              {selectedService === "bedrock" && (
+                <div style={{
+                  background: "white",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  border: "1px solid #e0e7ff",
+                  fontSize: "14px",
+                  lineHeight: "1.8",
+                  whiteSpace: "pre-wrap",
+                  color: "#1a1a2e"
+                }}>
+                  {result.result?.generated_text}
+                </div>
               )}
+
+              {/* その他サービスはJSON表示 */}
+              {selectedService !== "rekognition" && selectedService !== "bedrock" && (
+                <pre style={{
+                  background: "#1a1a2e",
+                  color: "#e2e8f0",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  overflow: "auto",
+                  fontSize: "13px",
+                  maxHeight: "400px",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-all"
+                }}>
+                  {JSON.stringify(result.result, null, 2)}
+                </pre>
+              )}}
             </div>
           )}
         </div>
