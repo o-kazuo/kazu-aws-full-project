@@ -1,5 +1,5 @@
 # KazuAI Platform 引き継ぎ書
-## Phase N+3 更新版（2026年5月11日更新）
+## Phase N+4 更新版（2026年5月11日更新）
 
 ## ⚠️ 絶対ルール
 - AWSリソースの変更は全部Terraformから！手動CLIでの変更は絶対NG
@@ -26,7 +26,7 @@
 | Lambda（画像処理） | ✅ 完了 | boto3除外・__pycache__除外・ZIPサイズ削減済み |
 | CloudTrail専用バケット | ✅ 完了 | inputバケットから分離済み |
 | SGルール管理 | ✅ 完了 | egress競合修正済み |
-| ECSタスクロール権限 | ✅ 完了 | S3・Rekognition・Cognito・DynamoDB・KMS権限追加済み |
+| ECSタスクロール権限 | ✅ 完了 | S3・Rekognition・Cognito・DynamoDB・KMS・Bedrock・Transcribe・Translate・Comprehend・Textract・Macie権限追加済み |
 | Cognito認証 | ✅ 動作確認済み | terraform output・SecretsManagerで自動化済み |
 | Alembicマイグレーション | ✅ 完了 | 専用ECSタスク・GitHub Actions自動化済み |
 | フロントエンドUI | ✅ 完了 | 日本語化・モバイル対応・自動翻訳無効化済み |
@@ -41,9 +41,18 @@
 | CloudFrontキャッシュ自動クリア | ✅ 完了 | GitHub Actionsデプロイ後に自動実行 |
 | Rekognition結果日本語化 | ✅ 完了 | ラベル・カテゴリ・感情を日本語表示 |
 | package/をgitignore | ✅ 完了 | Pillowバイナリ等をGit管理外に除外済み |
+| Bedrock権限・モデル設定 | ✅ 完了 | claude-haiku-4-5・推論プロファイル・global prefix |
+| 全AIサービス権限 | ✅ 完了 | Transcribe・Translate・Comprehend・Textract・Macie追加済み |
+| DB接続プール最適化 | ✅ 完了 | pool_recycle・pool_pre_ping追加済み |
+| TranscribeのS3 URI修正 | ✅ 完了 | s3://バケット名/キーの形式に修正済み |
+| Translateの引数順序修正 | ✅ 完了 | source_language・target_languageの順序修正済み |
+| Textractクロスリージョン設計 | ✅ 完了 | us-east-1にS3バケット作成・ECSからクロスリージョンアクセス |
+| 全AIサービスUI表示改善 | ✅ 完了 | Bedrock・Translate・Transcribe・Comprehend・Textractの結果表示改善 |
+| README更新 | ✅ 完了 | Mermaidアーキテクチャ図・苦労したこと・セキュリティ設計追加 |
 | ALBのHTTPS化 | ⏳ 未着手 | ドメイン取得後 |
 | Aurora Readerインスタンス追加 | ⏳ 未着手 | 本番環境向け |
 | Athena実装 | ⏳ 未着手 | ログ分析基盤 |
+| MACIEのUI実装 | ⏳ 未着手 | フロントエンド未実装 |
 
 ## 2. 重要な値
 
@@ -58,6 +67,7 @@
 | S3 Bucket（input） | dev-input-bucket-227811178732 |
 | S3 Bucket（output） | dev-output-bucket-227811178732 |
 | S3 Bucket（CloudTrail） | dev-cloudtrail-227811178732 |
+| S3 Bucket（Textract） | dev-textract-227811178732（us-east-1） |
 | RDS Endpoint | dev-aurora-cluster.cluster-cr40amieu2yc.ap-northeast-1.rds.amazonaws.com |
 | SecretsManager（RDS Proxy用） | dev-db-secret-proxy |
 | SecretsManager（アプリ用） | dev-app-secret |
@@ -65,6 +75,7 @@
 | AWS Account ID | 227811178732 |
 | AWS Region | ap-northeast-1 |
 | DynamoDB（画像分析） | dev-image-analysis |
+| Bedrockモデル | global.anthropic.claude-haiku-4-5-20251001-v1:0 |
 | テストユーザー | SecretsManagerから取得（dev-test-user-secret） |
 
 ### 最新のapply結果（2026年5月11日）
@@ -75,8 +86,6 @@
 | Cognito Client ID | 7co60gvo24t7s5gkncufplmf2u |
 | GitHub Actions Role ARN | arn:aws:iam::227811178732:role/dev-github-actions-role |
 | Lex Bot ID | V0UVZGTKOB |
-| Batch Job Definition | dev-batch-job |
-| Batch Job Queue | dev-batch-queue |
 
 ### applyのたびに変わる値（terraform outputで取得）
 | 項目 | 確認コマンド |
@@ -94,8 +103,20 @@
 └── /*    → S3（React/Vite）OAC保護
 画像処理：S3(input/images/) → Lambda → リサイズ・Rekognition・DynamoDB・SNS
 監査ログ：CloudTrail → S3(dev-cloudtrail-227811178732)
+Textract：ECS(ap-northeast-1) → S3(dev-textract-227811178732, us-east-1) → Textract(us-east-1)
 
-## 4. インフラ再構築手順（destroy後の復元）
+## 4. AIサービス一覧
+| サービス | 状態 | 備考 |
+|---|---|---|
+| Bedrock（Claude Haiku 4.5） | ✅ 動作確認済み | global.anthropic.claude-haiku-4-5-20251001-v1:0 |
+| Rekognition | ✅ 動作確認済み | ラベル・顔検出 |
+| Transcribe | ✅ 動作確認済み | S3 URI形式で渡す |
+| Translate | ✅ 動作確認済み | source/target引数順序に注意 |
+| Comprehend | ✅ 動作確認済み | 感情・エンティティ検出 |
+| Textract | ✅ 動作確認済み | us-east-1バケット経由 |
+| Macie | ⚠️ 未確認 | UIなし・コード実装済み |
+
+## 5. インフラ再構築手順（destroy後の復元）
 
 ### Step 1: 時刻同期
 sudo ntpdate pool.ntp.org
@@ -114,7 +135,6 @@ git push origin main
 
 ### Step 4: 動作確認
 curl -s https://$(terraform output -raw cloudfront_domain_name)/api/health
-# {"status":"healthy","service":"KazuAI Platform"} が返れば成功
 
 ### ⚠️ dev-test-user-secretがエラーになる場合
 aws secretsmanager delete-secret \
@@ -122,21 +142,22 @@ aws secretsmanager delete-secret \
   --force-delete-without-recovery
 terraform apply
 
-## 5. 次にやること（優先順）
+## 6. 次にやること（優先順）
 | # | タスク | 内容 |
 |---|---|---|
-| 1 | README編集 | 自分の言葉で書き直す・なぜこの設計にしたか・困ったこと・工夫した点を追記 |
-| 3 | ALBのHTTPS化 | ACM証明書・ドメイン取得後 |
-| 4 | Athena実装 | ログ分析基盤（任意） |
+| 1 | 履歴書作成 | READMEをベースに最強の履歴書を作成 |
+| 2 | ALBのHTTPS化 | ACM証明書・ドメイン取得後 |
+| 3 | Athena実装 | ログ分析基盤（任意） |
+| 4 | MACIEのUI実装 | フロントエンド追加 |
 
-## 6. 技術的負債
+## 7. 技術的負債
 | # | タスク | 内容 |
 |---|---|---|
 | 1 | RDSパスワード強化 | 強いパスワードに変更してSecretsManagerで管理 |
 | 2 | ALBのHTTPS化 | ACM証明書・ドメイン取得後 |
 | 3 | Aurora Readerインスタンス追加 | 完全な読み書き分離（本番環境向け） |
 
-## 7. Terraformモジュール構成
+## 8. Terraformモジュール構成
 terraform/modules/
 networking/  database/  security/  compute/  serverless/
 monitoring/  backup/    cdn/       lex/      container/
@@ -144,7 +165,7 @@ auth/        messaging/ governance/ cache/   batch/
 
 モジュール依存関係：networking → database → security → compute → container
 
-## 8. SGルール管理
+## 9. SGルール管理
 ⚠️ egressブロックとaws_security_group_ruleを混在させない！
 | ルール | 管理場所 |
 |---|---|
@@ -152,20 +173,20 @@ auth/        messaging/ governance/ cache/   batch/
 | RDS Proxy → Aurora（3306） | database/main.tf |
 | ECS → Aurora直接（3306）※マイグレーション用 | database/main.tf |
 
-## 9. SecretsManager構成
+## 10. SecretsManager構成
 | Secret名 | 用途 | KMS暗号化 |
 |---|---|---|
 | dev-db-secret-proxy | RDS ProxyがAuroraに接続 | なし |
 | dev-app-secret | DATABASE_URL_WRITER/READER（Terraform管理） | あり |
 | dev-test-user-secret | テストユーザー情報 | あり |
 
-## 10. DB読み書き分離
+## 11. DB読み書き分離
 - Writer: dev-rds-proxy.proxy-xxx.ap-northeast-1.rds.amazonaws.com
 - Reader: dev-rds-proxy-reader.endpoint.proxy-xxx.ap-northeast-1.rds.amazonaws.com
 - 現在は単一インスタンスのためWriterで両方処理（database.pyでフォールバック済み）
 - 本番環境ではReaderインスタンスを追加して完全分離
 
-## 11. Lambda（画像処理）構成
+## 12. Lambda（画像処理）構成
 | 項目 | 値 |
 |---|---|
 | 関数名 | dev-image-resize |
@@ -187,7 +208,7 @@ cp ~/kazu-aws-full-project/package/lambda_function.py ~/lambda_build/package/
 cd ~/lambda_build/package
 zip -r ~/kazu-aws-full-project/package/lambda_function.zip .
 
-## 12. GitHub Actions（deploy.yml）フロー
+## 13. GitHub Actions（deploy.yml）フロー
 git push
 → ECRにイメージビルド・プッシュ
 → マイグレーション専用ECSタスク起動（Aurora直接接続）
@@ -196,13 +217,13 @@ git push
 → フロントエンドビルド・S3デプロイ（キャッシュ制御付き）
 → CloudFrontキャッシュ自動クリア
 
-## 13. destroy前の手順
+## 14. destroy前の手順
 # ECR削除
 aws ecr batch-delete-image --repository-name dev-web-app \
   --image-ids "$(aws ecr list-images --repository-name dev-web-app --query 'imageIds' --output json)"
 
 # S3削除（バージョン含む）
-for bucket in dev-frontend-227811178732 dev-input-bucket-227811178732 dev-output-bucket-227811178732 dev-cloudtrail-227811178732; do
+for bucket in dev-frontend-227811178732 dev-input-bucket-227811178732 dev-output-bucket-227811178732 dev-cloudtrail-227811178732 dev-textract-227811178732; do
   aws s3 rm s3://$bucket --recursive
   aws s3api delete-objects --bucket $bucket \
     --delete "$(aws s3api list-object-versions --bucket $bucket \
@@ -224,7 +245,7 @@ done
 cd ~/kazu-aws-full-project/terraform/environments/dev
 terraform destroy
 
-## 14. トラブルシューティング
+## 15. トラブルシューティング
 | エラー | 原因 | 対処 |
 |---|---|---|
 | 503 Service Unavailable | ECSタスクが落ちている | aws ecs describe-servicesでイベント確認 |
@@ -239,8 +260,14 @@ terraform destroy
 | Target group doesn't have read-only instances | Aurora単一インスタンスでReaderが使えない | database.pyでDATABASE_URL_WRITERにフォールバック済み |
 | GitHub Actions OIDCエラー | destroyするとOIDCプロバイダーも消える | terraform applyで復元してからpush |
 | package/がgitに混入 | .gitignoreに未追加 | echo "package/" >> .gitignore && git rm -r --cached package/ |
+| Bedrock失敗（Legacy） | モデルIDが古い | global.anthropic.claude-haiku-4-5-20251001-v1:0を使用 |
+| Bedrock失敗（推論プロファイル） | on-demand未対応 | global.プレフィックスの推論プロファイルIDを使用 |
+| Lost connection to server | DB接続切れ | pool_recycle・pool_pre_ping設定済み |
+| TranscribeのS3エラー | S3 URIの形式が間違い | s3://バケット名/キーの形式で渡す |
+| Translate引数エラー | source/targetの順序が逆 | translate_text(text, source_language, target_language)の順 |
+| Textract接続エラー | Tokyoリージョン未対応 | us-east-1バケット・クライアントを使用 |
 
-## 15. 次の会話の始め方
+## 16. 次の会話の始め方
 新しい会話を始める時はこう伝えてください：
 
 KazuAI Platformプロジェクトの続きをやりたいです。
@@ -248,3 +275,4 @@ KazuAI Platformプロジェクトの続きをやりたいです。
 https://github.com/o-kazuo/kazu-aws-full-project/blob/main/HANDOVER.md
 
 現在の状態：インフラ稼働中（destroyしていない）
+次にやること：履歴書作成
