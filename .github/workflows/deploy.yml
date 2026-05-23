@@ -2,8 +2,10 @@ name: Deploy to ECS
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - '**.md'
 
 env:
   AWS_REGION: ap-northeast-1
